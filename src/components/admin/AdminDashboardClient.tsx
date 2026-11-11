@@ -1986,8 +1986,7 @@ export default function AdminDashboardClient() {
                         </span>
                         <span className="font-bold text-white">
                           {formatUsd(
-                            data.usageAnalytics.summary.gemini_month_usd +
-                              data.usageAnalytics.summary.rag_cost_month_usd
+                            data.usageAnalytics.summary.gemini_month_usd
                           )}
                         </span>
                       </div>
