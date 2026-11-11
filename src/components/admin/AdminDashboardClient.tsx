@@ -36,6 +36,7 @@ import {
   Eye,
   EyeOff,
   RotateCcw,
+  Globe,
   X,
 } from "lucide-react";
 import type {
@@ -53,6 +54,7 @@ interface KnowledgeDocSummary {
   id: string;
   title: string;
   category: string;
+  source_url?: string | null;
   is_active: boolean;
   chunks_count: number;
   updated_at: string;
@@ -757,7 +759,7 @@ export default function AdminDashboardClient() {
 
     setIndexingDoc(true);
     setIngestStatusText(
-      "Descargando archivos de Google Drive y extrayendo texto + imágenes con Gemini 3.8 Multimodal..."
+      "Leyendo páginas web / enlaces de Drive, estructurando contenido con Gemini 3.8 y vectorizando..."
     );
 
     try {
@@ -778,14 +780,46 @@ export default function AdminDashboardClient() {
 
       if (!res.ok || !json.ok) {
         notify(
-          json.error || "No fue posible importar desde el enlace de Google Drive."
+          json.error || "No fue posible leer o importar las URLs indicadas."
         );
       } else {
         setDriveUrlsText("");
         setCustomCategory("");
         setDocCategory(finalCategory);
         notify(
-          `Importados ${json.importedCount ?? 0} documento(s) desde Google Drive (${json.totalChunks ?? 0} fragmentos vectoriales).`
+          `Aprendidos ${json.importedCount ?? 0} enlace(s)/documento(s) (${json.totalChunks ?? 0} fragmentos vectoriales en Cerebro IA).`
+        );
+        await loadDashboard();
+      }
+    } finally {
+      setIngestStatusText(null);
+      setIndexingDoc(false);
+    }
+  }
+
+  async function handleResyncDocUrl(doc: KnowledgeDocSummary) {
+    if (!doc.source_url || indexingDoc) return;
+    setIndexingDoc(true);
+    setIngestStatusText(`Re-leyendo y actualizando vectores desde ${doc.source_url}...`);
+    try {
+      const res = await fetch("/api/admin/knowledge/ingest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          driveUrls: doc.source_url,
+          category: doc.category,
+        }),
+      });
+      const json = (await res.json()) as {
+        ok?: boolean;
+        totalChunks?: number;
+        error?: string;
+      };
+      if (!res.ok || !json.ok) {
+        notify(json.error || "No se pudo re-sincronizar la URL.");
+      } else {
+        notify(
+          `URL actualizada y re-vectorizada: ${doc.title} (${json.totalChunks ?? 0} fragmentos).`
         );
         await loadDashboard();
       }
@@ -1892,8 +1926,8 @@ export default function AdminDashboardClient() {
                       : "border-white/10 bg-[#07090F] text-slate-400 hover:border-white/20 hover:text-slate-200"
                   }`}
                 >
-                  <Database className="h-4 w-4 text-amber-400" aria-hidden="true" />
-                  <span>Opción B: Link Google Drive</span>
+                  <Globe className="h-4 w-4 text-amber-400" aria-hidden="true" />
+                  <span>Opción B: URLs Web / Drive</span>
                 </button>
 
                 <button
@@ -2101,53 +2135,64 @@ export default function AdminDashboardClient() {
                 </form>
               )}
 
-              {/* ==================== MODO OPCIÓN B: LINK / CARPETA GOOGLE DRIVE ==================== */}
+              {/* ==================== MODO OPCIÓN B: URLS WEB + GOOGLE DRIVE ==================== */}
               {ingestMode === "drive" && (
-                <form onSubmit={handleDriveLinksIngest} className="space-y-4">
+                <form
+                  method="POST"
+                  action="/api/admin/knowledge/ingest"
+                  onSubmit={handleDriveLinksIngest}
+                  className="space-y-4"
+                >
                   <div>
                     <label
                       htmlFor={`${uid}-drive-urls`}
                       className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-300"
                     >
-                      Enlaces de Google Drive (Carpeta compartida, PDFs o Google
-                      Docs)
+                      URLs Web (Páginas, Artículos, PDFs online) o Enlaces de
+                      Google Drive *
                     </label>
                     <textarea
                       id={`${uid}-drive-urls`}
+                      name="driveUrls"
                       rows={5}
                       required
+                      aria-describedby={`${uid}-drive-urls-help`}
                       autoCorrect="off"
                       autoCapitalize="none"
                       spellCheck={false}
                       value={driveUrlsText}
                       onChange={(e) => setDriveUrlsText(e.target.value)}
                       placeholder={
-                        "Pega uno o varios enlaces (uno por línea):\nhttps://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOpQrStUvWxYz\nhttps://drive.google.com/file/d/1XyZ.../view\nhttps://docs.google.com/document/d/1LMN.../edit"
+                        "Pega una o varias URLs públicas (una por línea):\nhttps://ingresarios.com/...\nhttps://tu-sitio.com/guia-metodo-pedem.pdf\nhttps://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOpQrStUvWxYz\nhttps://docs.google.com/document/d/1LMN.../edit"
                       }
                       className="w-full rounded-2xl border border-white/10 bg-[#07090F] p-4 font-mono text-xs leading-relaxed text-white"
                     />
-                    <p className="mt-1.5 text-xs text-slate-400">
-                      Asegúrate de que la carpeta o los archivos en Google Drive
-                      tengan el permiso{" "}
+                    <p
+                      id={`${uid}-drive-urls-help`}
+                      className="mt-1.5 text-xs text-slate-400"
+                    >
+                      Puedes pegar{" "}
                       <strong className="text-slate-200">
-                        &ldquo;Cualquier persona con el enlace puede ver&rdquo;
-                      </strong>
-                      . El servidor descargará cada PDF/Doc, analizará sus
-                      imágenes y textos con <code>gemini-3.8-flash</code> y lo
-                      vectorizará.
+                        cualquier página web pública
+                      </strong>{" "}
+                      (landings, FAQs, blogs, centros de ayuda o PDFs en línea)
+                      o enlaces/carpetas públicas de{" "}
+                      <strong className="text-slate-200">Google Drive</strong>.{" "}
+                      <code>GENY PRO</code> leerá la página, limpiará menús y
+                      vectorizará su contenido a 768 dimensiones.
                     </p>
                   </div>
 
                   <button
                     type="submit"
-                    disabled={indexingDoc || !driveUrlsText.trim()}
+                    disabled={indexingDoc}
                     className="inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-600/25 transition-colors duration-200 hover:from-violet-500 hover:to-indigo-500 disabled:opacity-60"
                   >
-                    <Database className="h-4 w-4" aria-hidden="true" />
+                    <Globe className="h-4 w-4" aria-hidden="true" />
                     <span>
                       {indexingDoc
-                        ? "Importando desde Google Drive y vectorizando..."
-                        : "Importar y Vectorizar desde Google Drive"}
+                        ? "Leyendo URLs y vectorizando en Cerebro IA..."
+                        : "Leer URLs y Aprender en Cerebro IA"}
                     </span>
                   </button>
                 </form>
@@ -2263,19 +2308,55 @@ export default function AdminDashboardClient() {
                       className="glass-card-interactive flex items-center justify-between gap-3 rounded-2xl p-4"
                     >
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className="rounded-md border border-violet-500/30 bg-violet-500/15 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase text-violet-300">
                             {doc.category}
                           </span>
                           <span className="font-mono text-[11px] text-slate-400">
                             {doc.chunks_count} chunk(s)
                           </span>
+                          {doc.source_url && (
+                            <a
+                              href={doc.source_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 truncate font-mono text-[11px] text-amber-300/90 hover:underline"
+                              title={doc.source_url}
+                            >
+                              <Globe className="h-3 w-3 shrink-0" aria-hidden="true" />
+                              <span className="max-w-36 truncate">
+                                {(() => {
+                                  try {
+                                    return new URL(doc.source_url).hostname.replace(
+                                      /^www\./,
+                                      ""
+                                    );
+                                  } catch {
+                                    return "URL";
+                                  }
+                                })()}
+                              </span>
+                            </a>
+                          )}
                         </div>
                         <p className="mt-1.5 truncate text-sm font-semibold text-white">
                           {doc.title}
                         </p>
                       </div>
                       <div className="flex shrink-0 items-center gap-1.5">
+                        {doc.source_url && (
+                          <button
+                            type="button"
+                            disabled={indexingDoc}
+                            aria-label={`Re-leer URL de ${doc.title}`}
+                            title="Volver a leer esta URL y actualizar vectores"
+                            onClick={() => void handleResyncDocUrl(doc)}
+                            className="inline-flex h-9 cursor-pointer items-center gap-1 rounded-xl border border-amber-500/25 bg-amber-500/10 px-2.5 text-xs font-semibold text-amber-200 transition-colors duration-200 hover:border-amber-400/50 hover:bg-amber-500/20 disabled:opacity-50"
+                          >
+                            <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+                            <span>Re-leer</span>
+                          </button>
+                        )}
                         <button
                           type="button"
                           aria-label={`Ver o editar ${doc.title}`}
