@@ -11,7 +11,12 @@ export async function GET(req: NextRequest) {
     await getGenySettings();
   }
 
-  const origin = req.nextUrl.origin;
+  const rawOrigin = req.nextUrl.origin;
+  const origin =
+    process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/+$/, "") ||
+    (rawOrigin.includes("localhost") || rawOrigin.includes(".vercel.app")
+      ? "https://genypro.ingresarios.ai"
+      : rawOrigin);
   const telegramToken = process.env.TELEGRAM_BOT_TOKEN?.trim() || "";
   const telegramSecret = process.env.TELEGRAM_WEBHOOK_SECRET?.trim() || "";
   const whatsappVerifyToken = process.env.WHATSAPP_VERIFY_TOKEN?.trim() || "";
@@ -116,7 +121,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         error:
-          "Telegram exige una URL pública HTTPS (ej. tu dominio en Vercel https://geny-pro.vercel.app) para registrar el webhook.",
+          "Telegram exige una URL pública HTTPS (ej. https://genypro.ingresarios.ai) para registrar el webhook.",
       },
       { status: 400 }
     );

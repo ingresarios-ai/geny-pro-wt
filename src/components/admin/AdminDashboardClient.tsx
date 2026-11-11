@@ -301,7 +301,12 @@ export default function AdminDashboardClient() {
       if (chRes.ok) {
         const chJson = (await chRes.json()) as ChannelsPayload;
         setChannelsInfo(chJson);
-        setPublicDomainUrl((prev) => prev || chJson.origin);
+        const preferredOrigin =
+          chJson.origin.includes("localhost") ||
+          chJson.origin.includes(".vercel.app")
+            ? "https://genypro.ingresarios.ai"
+            : chJson.origin;
+        setPublicDomainUrl((prev) => prev || preferredOrigin);
       }
     } finally {
       setLoading(false);
@@ -2499,7 +2504,7 @@ export default function AdminDashboardClient() {
                       autoCorrect="off"
                       autoCapitalize="none"
                       spellCheck={false}
-                      placeholder="https://genypro.ingresarios.net"
+                      placeholder="https://genypro.ingresarios.ai"
                       value={publicDomainUrl}
                       onChange={(e) => setPublicDomainUrl(e.target.value)}
                       className="min-h-11 w-full rounded-xl border border-white/10 bg-[#07090F] px-3.5 font-mono text-xs text-white"

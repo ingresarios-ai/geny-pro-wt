@@ -8,7 +8,10 @@ Este archivo se carga automáticamente como memoria persistente del espacio de t
 - **Idioma:** Español conciso y claro.
 
 ## 2. Infraestructura Activa (100% en la Nube)
-- **Framework:** Next.js 15 (App Router, TypeScript, Tailwind CSS v4) ejecutándose localmente en el puerto `3005` (`npx next dev -p 3005`) y preparado para desplegar en **Vercel Pro (Fluid Compute)**.
+- **Dominio Oficial en Producción:** **`https://genypro.ingresarios.ai/`** (desplegado en **Vercel Pro · Fluid Compute**, región `iad1` / `us-east-1`).
+- **Repositorio GitHub:** `https://github.com/ingresarios-ai/geny-pro-wt` (rama `main`, despliegue automático en Vercel).
+- **Bot Oficial de Telegram:** `@GenyProIngresariosBot` (Webhook activo en `https://genypro.ingresarios.ai/api/webhooks/telegram`).
+- **Framework:** Next.js 15 (App Router, TypeScript, Tailwind CSS v4) ejecutándose localmente en el puerto `3005` (`npx next dev -p 3005`).
 - **Base de Datos Supabase (Producción):**
   - **Proyecto:** `geny-pro` (Project ID: `gejvutumbannwaltklez`, Región: `us-east-1`, Organización: `Ingresarios` `yhmhwvcmpllqiaziliji`).
   - **Seguridad:** Las 10 tablas del esquema `public` tienen RLS habilitado (`service_role` exclusivo desde el servidor).
@@ -43,7 +46,7 @@ Este archivo se carga automáticamente como memoria persistente del espacio de t
    - Alerta obligatoria de **Zona de Peligro** antes de desbloquear la edición y botón **`Restaurar a la Última Versión Funcional`** (`geny_settings_snapshots` / `previous_working_snapshot`).
 
 ## 4. Punto Exacto Donde Nos Quedamos (Próximo Paso Seleccionado)
-- **Paso actual elegido por el usuario:** **Configurar el Bot de Telegram (`@BotFather`) y preparar el despliegue en Vercel para pruebas reales** (de cara a la beta del 16 de noviembre y lanzamiento en Telegram el 20 de noviembre de 2026).
+- **Estado actual:** **Producción en vivo en `https://genypro.ingresarios.ai/`** con `@GenyProIngresariosBot` conectado por Webhook HTTPS seguro (`iad1`). Listo para **Paso 4: Prueba real en vivo en Telegram** (alta/verificación de miembro con OTP por correo + conversación real con `GENY PRO`).
 - **Pendientes posteriores en hoja de ruta:**
   - Ofrecer/implementar la **Opción C de Google Drive** (sincronización con carpetas privadas vía Google Service Account) si el usuario lo requiere tras probar las Opciones A y B.
   - Carga de manuales reales en el RAG e importación de alumnos activos por CSV.
