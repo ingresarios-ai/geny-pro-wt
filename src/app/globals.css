@@ -208,10 +208,79 @@ textarea:invalid:user-invalid {
   border-color: #f43f5e;
 }
 
+/* Native <progress> bar (modern-web-guidance: progress) */
+progress.geny-progress {
+  appearance: none;
+  border: 0 solid;
+  overflow: clip;
+  container-type: inline-size;
+  inline-size: 100%;
+  block-size: 0.5rem;
+  --progress-bar-radius: 1e5px;
+  --progress-bar-track: rgba(255, 255, 255, 0.08);
+  --progress-bar-fill: linear-gradient(90deg, #8b5cf6 0%, #6366f1 55%, #10b981 100%);
+  --progress-bar-indeterminate-size: 32%;
+  --progress-bar-indeterminate-animation-duration: 1.4s;
+  border-radius: var(--progress-bar-radius);
+  background: var(--progress-bar-track);
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.35);
+}
+
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  progress.geny-progress {
+    --progress-bar-indeterminate-animation-duration: 10s;
+  }
+}
+
+progress.geny-progress:dir(rtl) {
+  --progress-bar-indeterminate-animation: progress-bar-indeterminate
+    var(--progress-bar-indeterminate-animation-duration) infinite linear reverse;
+}
+
+progress.geny-progress:indeterminate {
+  --progress-bar-animation: var(
+    --progress-bar-indeterminate-animation,
+    progress-bar-indeterminate var(--progress-bar-indeterminate-animation-duration)
+      infinite linear
+  );
+}
+
+progress.geny-progress::-webkit-progress-bar {
+  background: transparent;
+}
+
+progress.geny-progress::-webkit-progress-value {
+  background: var(--progress-bar-fill);
+  border-radius: var(--progress-bar-radius);
+  transition: inline-size 0.3s;
+  animation: var(--progress-bar-animation, revert-rule);
+}
+
+progress.geny-progress::-moz-progress-bar {
+  background: var(--progress-bar-fill);
+  border-radius: var(--progress-bar-radius);
+  transition: inline-size 0.3s;
+  animation: var(--progress-bar-animation, revert-rule);
+}
+
+@keyframes progress-bar-indeterminate {
+  from,
+  to {
+    inline-size: var(--progress-bar-indeterminate-size);
+    margin-right: auto;
+  }
+  from {
+    translate: -100%;
+  }
+  to {
+    translate: 100cqi;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *:not(progress.geny-progress),
+  *:not(progress.geny-progress)::before,
+  *:not(progress.geny-progress)::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }

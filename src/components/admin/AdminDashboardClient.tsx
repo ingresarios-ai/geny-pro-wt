@@ -60,6 +60,17 @@ interface KnowledgeDocSummary {
   updated_at: string;
 }
 
+interface IngestJobItem {
+  id: string;
+  name: string;
+  stage: "queued" | "uploading" | "analyzing" | "done" | "error";
+  uploadPercent?: number;
+  detailText: string;
+  categoryAssigned?: string;
+  isNewCategory?: boolean;
+  chunksIndexed?: number;
+}
+
 interface ReviewMessageRow extends GenyMessage {
   geny_users?: { email?: string; full_name?: string | null } | null;
 }
@@ -258,19 +269,22 @@ export default function AdminDashboardClient() {
   const [editNotes, setEditNotes] = useState("");
   const [updatingSelected, setUpdatingSelected] = useState(false);
 
-  // Conocimiento RAG (Opción A: Archivos PDF/Word/Imágenes, Opción B: Google Drive, Manual/Edición)
+  // Conocimiento RAG (Opción A: Archivos PDF/Word/Imágenes, Opción B: URLs Web / Google Drive, Manual/Edición)
   const [ingestMode, setIngestMode] = useState<"files" | "drive" | "manual">(
     "files"
   );
   const [editingDocId, setEditingDocId] = useState<string | null>(null);
   const [docTitle, setDocTitle] = useState("");
-  const [docCategory, setDocCategory] = useState("pedem");
+  const [docCategory, setDocCategory] = useState("__auto__");
   const [customCategory, setCustomCategory] = useState("");
   const [docContent, setDocContent] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [isDraggingFiles, setIsDraggingFiles] = useState(false);
   const [driveUrlsText, setDriveUrlsText] = useState("");
   const [ingestStatusText, setIngestStatusText] = useState<string | null>(null);
   const [indexingDoc, setIndexingDoc] = useState(false);
+  const [ingestJobs, setIngestJobs] = useState<IngestJobItem[]>([]);
+  const [ingestDrawerMinimized, setIngestDrawerMinimized] = useState(false);
 
   // Settings editables + Bóveda de APIs (Zona de Peligro)
   const [settingsForm, setSettingsForm] = useState<GenySettings | null>(null);
@@ -284,40 +298,85 @@ export default function AdminDashboardClient() {
   );
   const [restoringSnapshot, setRestoringSnapshot] = useState(false);
 
-  const loadDashboard = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [res, chRes] = await Promise.all([
-        fetch("/api/admin/dashboard", { cache: "no-store" }),
-        fetch("/api/admin/channels", { cache: "no-store" }),
-      ]);
-      if (res.status === 401) {
-        router.refresh();
-        return;
+  const loadDashboard = useCallback(
+    async (opts?: { silent?: boolean }) => {
+      if (!opts?.silent) {
+        setLoading(true);
       }
-      const json = (await res.json()) as DashboardPayload;
-      setData(json);
-      if (json.settings) {
-        setSettingsForm(json.settings);
+      try {
+        const [res, chRes] = await Promise.all([
+          fetch("/api/admin/dashboard", { cache: "no-store" }),
+          fetch("/api/admin/channels", { cache: "no-store" }),
+        ]);
+        if (res.status === 401) {
+          router.refresh();
+          return;
+        }
+        const json = (await res.json()) as DashboardPayload;
+        setData(json);
+        if (json.settings) {
+          setSettingsForm((prev) =>
+            opts?.silent && prev ? prev : json.settings
+          );
+        }
+        if (chRes.ok) {
+          const chJson = (await chRes.json()) as ChannelsPayload;
+          setChannelsInfo(chJson);
+          const preferredOrigin =
+            chJson.origin.includes("localhost") ||
+            chJson.origin.includes(".vercel.app")
+              ? "https://genypro.ingresarios.ai"
+              : chJson.origin;
+          setPublicDomainUrl((prev) => prev || preferredOrigin);
+        }
+      } finally {
+        if (!opts?.silent) {
+          setLoading(false);
+        }
       }
-      if (chRes.ok) {
-        const chJson = (await chRes.json()) as ChannelsPayload;
-        setChannelsInfo(chJson);
-        const preferredOrigin =
-          chJson.origin.includes("localhost") ||
-          chJson.origin.includes(".vercel.app")
-            ? "https://genypro.ingresarios.ai"
-            : chJson.origin;
-        setPublicDomainUrl((prev) => prev || preferredOrigin);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [router]);
+    },
+    [router]
+  );
 
   useEffect(() => {
     void loadDashboard();
   }, [loadDashboard]);
+
+  const hasActiveIngestJobs = useMemo(
+    () =>
+      ingestJobs.some(
+        (j) =>
+          j.stage === "queued" ||
+          j.stage === "uploading" ||
+          j.stage === "analyzing"
+      ),
+    [ingestJobs]
+  );
+
+  // Evitar que arrastrar un PDF a la ventana abra una pestaña nueva del navegador y proteger cierres accidentales durante subidas
+  useEffect(() => {
+    function preventBrowserFileOpen(e: DragEvent) {
+      if (e.dataTransfer?.types?.includes("Files")) {
+        e.preventDefault();
+      }
+    }
+    window.addEventListener("dragover", preventBrowserFileOpen);
+    window.addEventListener("drop", preventBrowserFileOpen);
+    return () => {
+      window.removeEventListener("dragover", preventBrowserFileOpen);
+      window.removeEventListener("drop", preventBrowserFileOpen);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!hasActiveIngestJobs) return;
+    function handleBeforeUnload(e: BeforeUnloadEvent) {
+      e.preventDefault();
+      e.returnValue = "";
+    }
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasActiveIngestJobs]);
 
   function notify(msg: string) {
     setFeedbackBanner(msg);
@@ -672,6 +731,9 @@ export default function AdminDashboardClient() {
   }
 
   function resolveSelectedCategory(): string | null {
+    if (docCategory === "__auto__") {
+      return "__auto__";
+    }
     const finalCategory =
       docCategory === "__custom__"
         ? customCategory
@@ -686,147 +748,459 @@ export default function AdminDashboardClient() {
     return finalCategory;
   }
 
-  async function handleBulkFilesIngest(e: React.FormEvent<HTMLFormElement>) {
+  function appendIncomingFiles(incoming: File[]) {
+    const allowedExt = /\.(pdf|docx|png|jpe?g|webp|txt|md|csv)$/i;
+    const valid = incoming.filter((f) => allowedExt.test(f.name));
+    if (valid.length === 0) {
+      notify(
+        "Formato no soportado. Arrastra o selecciona archivos PDF, Word (.docx), PNG/JPG/WebP, TXT, MD o CSV."
+      );
+      return;
+    }
+    setSelectedFiles((prev) => {
+      const existingKeys = new Set(prev.map((p) => `${p.name}:${p.size}`));
+      const merged = [...prev];
+      for (const f of valid) {
+        const key = `${f.name}:${f.size}`;
+        if (!existingKeys.has(key)) {
+          existingKeys.add(key);
+          merged.push(f);
+        }
+      }
+      return merged;
+    });
+  }
+
+  async function safeParseJson<T>(res: Response): Promise<T & { error?: string }> {
+    const raw = await res.text();
+    try {
+      return JSON.parse(raw) as T & { error?: string };
+    } catch {
+      return {
+        error:
+          res.status === 413
+            ? "El archivo supera el límite directo HTTP (413)."
+            : res.status === 504
+              ? "El análisis tardó más de 60 segundos en el servidor (504)."
+              : raw.slice(0, 160) || `Error HTTP ${res.status}`,
+      } as T & { error?: string };
+    }
+  }
+
+  function updateIngestJob(
+    jobId: string,
+    patch: Partial<IngestJobItem>
+  ): void {
+    setIngestJobs((prev) =>
+      prev.map((j) => (j.id === jobId ? { ...j, ...patch } : j))
+    );
+  }
+
+  function uploadFileDirectWithProgress(params: {
+    file: File;
+    signedUrl: string;
+    onProgress: (pct: number, loadedBytes: number, totalBytes: number) => void;
+  }): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("PUT", params.signedUrl, true);
+      xhr.setRequestHeader(
+        "Content-Type",
+        params.file.type || "application/octet-stream"
+      );
+      xhr.upload.onprogress = (evt) => {
+        if (evt.lengthComputable && evt.total > 0) {
+          const pct = Math.min(100, Math.round((evt.loaded / evt.total) * 100));
+          params.onProgress(pct, evt.loaded, evt.total);
+        }
+      };
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve();
+        } else {
+          reject(
+            new Error(
+              `Error subiendo archivo a la nube (HTTP ${xhr.status}).`
+            )
+          );
+        }
+      };
+      xhr.onerror = () =>
+        reject(new Error("Error de red durante la subida del archivo."));
+      xhr.send(params.file);
+    });
+  }
+
+  function handleBulkFilesIngest(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (indexingDoc || selectedFiles.length === 0) return;
+    if (selectedFiles.length === 0) {
+      notify(
+        "⚠️ Arrastra o selecciona al menos un archivo (PDF, Word o Imagen) para subir y vectorizar."
+      );
+      document.getElementById(`${uid}-file-drop`)?.focus();
+      return;
+    }
 
     const finalCategory = resolveSelectedCategory();
     if (!finalCategory) return;
 
-    setIndexingDoc(true);
-    let successCount = 0;
-    let totalChunks = 0;
-    const errors: string[] = [];
+    const filesBatch = [...selectedFiles];
+    const customSingleTitle =
+      filesBatch.length === 1 ? docTitle.trim() : "";
 
-    try {
-      for (let i = 0; i < selectedFiles.length; i++) {
-        const file = selectedFiles[i];
-        setIngestStatusText(
-          `Analizando archivo ${i + 1} de ${selectedFiles.length} con Gemini 3.8 Multimodal (texto + imágenes): ${file.name}...`
-        );
-
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("category", finalCategory);
-        if (selectedFiles.length === 1 && docTitle.trim()) {
-          formData.append("title", docTitle.trim());
-        }
-
-        const res = await fetch("/api/admin/knowledge/ingest", {
-          method: "POST",
-          body: formData,
-        });
-        const json = (await res.json()) as {
-          ok?: boolean;
-          chunksIndexed?: number;
-          error?: string;
-        };
-
-        if (!res.ok || !json.ok) {
-          errors.push(`${file.name}: ${json.error || "Error al procesar"}`);
-        } else {
-          successCount++;
-          totalChunks += json.chunksIndexed ?? 0;
-        }
-      }
-
-      if (successCount > 0) {
-        setSelectedFiles([]);
-        setDocTitle("");
-        setCustomCategory("");
-        setDocCategory(finalCategory);
-        notify(
-          `Indexados ${successCount} archivo(s) con visión multimodal (${totalChunks} fragmentos vectoriales en "${finalCategory}").${
-            errors.length > 0 ? ` Avisos: ${errors.join(" | ")}` : ""
-          }`
-        );
-        await loadDashboard();
-      } else {
-        notify(errors[0] || "No se pudieron indexar los archivos seleccionados.");
-      }
-    } finally {
-      setIngestStatusText(null);
-      setIndexingDoc(false);
+    // Limpiar formulario de inmediato para permitir seguir trabajando o cambiar de pestaña
+    setSelectedFiles([]);
+    setDocTitle("");
+    if (docCategory === "__custom__") {
+      setCustomCategory("");
     }
+    setIngestDrawerMinimized(false);
+
+    const createdJobs: IngestJobItem[] = filesBatch.map((f, idx) => ({
+      id: `file-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 7)}`,
+      name: customSingleTitle || f.name,
+      stage: "queued",
+      uploadPercent: 0,
+      detailText: `En cola (${(f.size / (1024 * 1024)).toFixed(2)} MB)`,
+    }));
+
+    setIngestJobs((prev) => [
+      ...createdJobs,
+      ...prev.filter((j) => j.stage !== "done"),
+    ]);
+
+    notify(
+      `Iniciando carga en segundo plano de ${filesBatch.length} archivo(s). Puedes cambiar de pestaña libremente.`
+    );
+
+    // Ejecutar en segundo plano sin bloquear navegación entre pestañas
+    void (async () => {
+      let okCount = 0;
+      let chunksTotal = 0;
+
+      for (let i = 0; i < filesBatch.length; i++) {
+        const file = filesBatch[i];
+        const jobId = createdJobs[i].id;
+        const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+
+        try {
+          updateIngestJob(jobId, {
+            stage: "uploading",
+            uploadPercent: 2,
+            detailText: `Preparando subida segura (${sizeMb} MB)...`,
+          });
+
+          const signRes = await fetch("/api/admin/knowledge/ingest", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "create_upload_url",
+              fileName: file.name,
+              mimeType: file.type || "application/pdf",
+            }),
+          });
+          const signJson = await safeParseJson<{
+            ok?: boolean;
+            signedUrl?: string;
+            storagePath?: string;
+          }>(signRes);
+
+          if (!signRes.ok || !signJson.ok || !signJson.signedUrl || !signJson.storagePath) {
+            throw new Error(
+              signJson.error || "No se pudo iniciar la subida en Supabase Storage."
+            );
+          }
+
+          await uploadFileDirectWithProgress({
+            file,
+            signedUrl: signJson.signedUrl,
+            onProgress: (pct, loaded, total) => {
+              const loadedMb = (loaded / (1024 * 1024)).toFixed(2);
+              const totalMb = (total / (1024 * 1024)).toFixed(2);
+              updateIngestJob(jobId, {
+                stage: "uploading",
+                uploadPercent: pct,
+                detailText: `Subiendo archivo: ${pct}% (${loadedMb} / ${totalMb} MB)`,
+              });
+            },
+          });
+
+          updateIngestJob(jobId, {
+            stage: "analyzing",
+            uploadPercent: 100,
+            detailText:
+              finalCategory === "__auto__"
+                ? "Analizando texto + imágenes con Gemini 3.8, eligiendo categoría automática y vectorizando (768d)..."
+                : "Analizando texto + imágenes con Gemini 3.8 Multimodal y vectorizando (768d)...",
+          });
+
+          const procRes = await fetch("/api/admin/knowledge/ingest", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "ingest_storage_file",
+              storagePath: signJson.storagePath,
+              fileName: file.name,
+              mimeType: file.type || "application/pdf",
+              category: finalCategory,
+              title: customSingleTitle || undefined,
+            }),
+          });
+
+          const procJson = await safeParseJson<{
+            ok?: boolean;
+            category?: string;
+            autoClassified?: boolean;
+            isNewCategory?: boolean;
+            chunksIndexed?: number;
+          }>(procRes);
+
+          if (!procRes.ok || !procJson.ok) {
+            throw new Error(
+              procJson.error || "Error durante la extracción multimodal."
+            );
+          }
+
+          const assignedCat = (procJson.category || "general").toUpperCase();
+          const chunks = procJson.chunksIndexed ?? 0;
+          okCount++;
+          chunksTotal += chunks;
+
+          updateIngestJob(jobId, {
+            stage: "done",
+            uploadPercent: 100,
+            categoryAssigned: assignedCat,
+            isNewCategory: procJson.isNewCategory,
+            chunksIndexed: chunks,
+            detailText: `Completado · ${chunks} fragmentos · Categoría: ${assignedCat}${
+              procJson.isNewCategory ? " (Nueva creada por IA)" : ""
+            }`,
+          });
+
+          await loadDashboard({ silent: true });
+        } catch (err) {
+          updateIngestJob(jobId, {
+            stage: "error",
+            detailText:
+              err instanceof Error ? err.message : "Error inesperado al procesar.",
+          });
+        }
+      }
+
+      if (okCount > 0) {
+        notify(
+          `✅ Procesamiento finalizado: ${okCount} de ${filesBatch.length} archivo(s) indexados (${chunksTotal} fragmentos en Cerebro IA).`
+        );
+      } else {
+        notify(
+          `⚠️ No se pudo completar el procesamiento. Revisa el detalle en el monitor de carga.`
+        );
+      }
+    })();
   }
 
   async function handleDriveLinksIngest(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (indexingDoc || !driveUrlsText.trim()) return;
+    if (!driveUrlsText.trim()) return;
 
     const finalCategory = resolveSelectedCategory();
     if (!finalCategory) return;
 
+    const rawUrlsSnapshot = driveUrlsText;
     setIndexingDoc(true);
     setIngestStatusText(
-      "Leyendo páginas web / enlaces de Drive, estructurando contenido con Gemini 3.8 y vectorizando..."
+      "Inspeccionando enlaces y listando documentos de carpetas de Google Drive..."
     );
 
     try {
-      const res = await fetch("/api/admin/knowledge/ingest", {
+      const expandRes = await fetch("/api/admin/knowledge/ingest", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          driveUrls: driveUrlsText,
-          category: finalCategory,
+          action: "expand_targets",
+          driveUrls: rawUrlsSnapshot,
         }),
       });
-      const json = (await res.json()) as {
-        ok?: boolean;
-        importedCount?: number;
-        totalChunks?: number;
-        error?: string;
-      };
 
-      if (!res.ok || !json.ok) {
+      const expandJson = await safeParseJson<{
+        ok?: boolean;
+        expandedItems?: Array<{
+          label: string;
+          url: string;
+          titleHint?: string;
+        }>;
+      }>(expandRes);
+
+      if (
+        !expandRes.ok ||
+        !expandJson.ok ||
+        !expandJson.expandedItems ||
+        expandJson.expandedItems.length === 0
+      ) {
         notify(
-          json.error || "No fue posible leer o importar las URLs indicadas."
+          expandJson.error ||
+            "No se detectaron URLs públicas ni documentos visibles en la carpeta de Drive."
         );
-      } else {
-        setDriveUrlsText("");
-        setCustomCategory("");
-        setDocCategory(finalCategory);
-        notify(
-          `Aprendidos ${json.importedCount ?? 0} enlace(s)/documento(s) (${json.totalChunks ?? 0} fragmentos vectoriales en Cerebro IA).`
-        );
-        await loadDashboard();
+        return;
       }
+
+      const items = expandJson.expandedItems;
+      setDriveUrlsText("");
+      if (docCategory === "__custom__") {
+        setCustomCategory("");
+      }
+      setIngestDrawerMinimized(false);
+
+      const createdJobs: IngestJobItem[] = items.map((item, idx) => ({
+        id: `url-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 7)}`,
+        name: item.label,
+        stage: "queued",
+        detailText: `En cola (${idx + 1} de ${items.length})`,
+      }));
+
+      setIngestJobs((prev) => [
+        ...createdJobs,
+        ...prev.filter((j) => j.stage !== "done"),
+      ]);
+
+      notify(
+        `Procesando ${items.length} documento(s)/URL(s) en segundo plano. Puedes cambiar de pestaña libremente.`
+      );
+
+      // Procesar 1 por 1 en segundo plano para que incluso una carpeta de Drive de 20+ documentos nunca tenga timeout
+      void (async () => {
+        let okCount = 0;
+        let chunksTotal = 0;
+
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i];
+          const jobId = createdJobs[i].id;
+
+          updateIngestJob(jobId, {
+            stage: "analyzing",
+            detailText: `Leyendo documento ${i + 1} de ${items.length} con Gemini 3.8${
+              finalCategory === "__auto__" ? " + categorización IA" : ""
+            } y vectorizando...`,
+          });
+
+          try {
+            const res = await fetch("/api/admin/knowledge/ingest", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                driveUrls: item.url,
+                titleHint: item.titleHint,
+                category: finalCategory,
+              }),
+            });
+
+            const json = await safeParseJson<{
+              ok?: boolean;
+              totalChunks?: number;
+              importedDocs?: Array<{
+                title: string;
+                category: string;
+                isNewCategory: boolean;
+                chunksIndexed: number;
+              }>;
+            }>(res);
+
+            if (!res.ok || !json.ok) {
+              throw new Error(
+                json.error || "No se pudo leer o indexar este enlace."
+              );
+            }
+
+            const firstDoc = json.importedDocs?.[0];
+            const assignedCat = (firstDoc?.category || "general").toUpperCase();
+            const chunks = json.totalChunks ?? firstDoc?.chunksIndexed ?? 0;
+            okCount++;
+            chunksTotal += chunks;
+
+            updateIngestJob(jobId, {
+              name: firstDoc?.title || item.label,
+              stage: "done",
+              categoryAssigned: assignedCat,
+              isNewCategory: firstDoc?.isNewCategory,
+              chunksIndexed: chunks,
+              detailText: `Completado · ${chunks} fragmentos · Categoría: ${assignedCat}${
+                firstDoc?.isNewCategory ? " (Nueva creada por IA)" : ""
+              }`,
+            });
+
+            await loadDashboard({ silent: true });
+          } catch (err) {
+            updateIngestJob(jobId, {
+              stage: "error",
+              detailText:
+                err instanceof Error ? err.message : "Error al leer URL.",
+            });
+          }
+        }
+
+        if (okCount > 0) {
+          notify(
+            `✅ Lectura de enlaces completada: ${okCount} de ${items.length} indexados (${chunksTotal} fragmentos en Cerebro IA).`
+          );
+        } else {
+          notify(
+            `⚠️ No fue posible indexar los enlaces. Revisa el detalle en el monitor.`
+          );
+        }
+      })();
     } finally {
       setIngestStatusText(null);
       setIndexingDoc(false);
     }
   }
 
-  async function handleResyncDocUrl(doc: KnowledgeDocSummary) {
-    if (!doc.source_url || indexingDoc) return;
-    setIndexingDoc(true);
-    setIngestStatusText(`Re-leyendo y actualizando vectores desde ${doc.source_url}...`);
-    try {
-      const res = await fetch("/api/admin/knowledge/ingest", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          driveUrls: doc.source_url,
-          category: doc.category,
-        }),
-      });
-      const json = (await res.json()) as {
-        ok?: boolean;
-        totalChunks?: number;
-        error?: string;
-      };
-      if (!res.ok || !json.ok) {
-        notify(json.error || "No se pudo re-sincronizar la URL.");
-      } else {
-        notify(
-          `URL actualizada y re-vectorizada: ${doc.title} (${json.totalChunks ?? 0} fragmentos).`
-        );
-        await loadDashboard();
+  function handleResyncDocUrl(doc: KnowledgeDocSummary) {
+    if (!doc.source_url) return;
+    const jobId = `resync-${Date.now()}-${doc.id.slice(0, 6)}`;
+    setIngestDrawerMinimized(false);
+    setIngestJobs((prev) => [
+      {
+        id: jobId,
+        name: doc.title,
+        stage: "analyzing",
+        detailText: `Re-leyendo URL y regenerando vectores 768d...`,
+      },
+      ...prev.filter((j) => j.stage !== "done"),
+    ]);
+
+    void (async () => {
+      try {
+        const res = await fetch("/api/admin/knowledge/ingest", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            driveUrls: doc.source_url,
+            category: doc.category,
+          }),
+        });
+        const json = await safeParseJson<{
+          ok?: boolean;
+          totalChunks?: number;
+        }>(res);
+        if (!res.ok || !json.ok) {
+          throw new Error(json.error || "No se pudo re-sincronizar la URL.");
+        }
+        updateIngestJob(jobId, {
+          stage: "done",
+          chunksIndexed: json.totalChunks ?? 0,
+          categoryAssigned: doc.category.toUpperCase(),
+          detailText: `Actualizado · ${json.totalChunks ?? 0} fragmentos · Categoría: ${doc.category.toUpperCase()}`,
+        });
+        notify(`✅ URL actualizada y re-vectorizada: ${doc.title}`);
+        await loadDashboard({ silent: true });
+      } catch (err) {
+        updateIngestJob(jobId, {
+          stage: "error",
+          detailText:
+            err instanceof Error ? err.message : "Error al re-sincronizar.",
+        });
       }
-    } finally {
-      setIngestStatusText(null);
-      setIndexingDoc(false);
-    }
+    })();
   }
 
   async function handleLoadDocForEdit(docId: string) {
@@ -876,19 +1250,24 @@ export default function AdminDashboardClient() {
         }),
       });
       const json = (await res.json()) as {
+        document?: { category?: string };
         chunksIndexed?: number;
+        isNewCategory?: boolean;
         error?: string;
       };
       if (!res.ok) {
         notify(json.error || "Error al indexar documento.");
       } else {
+        const assignedCat = json.document?.category || finalCategory;
         setEditingDocId(null);
         setDocTitle("");
         setDocContent("");
         setCustomCategory("");
-        setDocCategory(finalCategory);
+        setDocCategory(finalCategory === "__auto__" ? "__auto__" : assignedCat);
         notify(
-          `Documento vectorizado en Supabase (${json.chunksIndexed ?? 0} fragmentos) en categoría "${finalCategory}".`
+          `Documento vectorizado en Supabase (${json.chunksIndexed ?? 0} fragmentos) en categoría "${assignedCat.toUpperCase()}"${
+            json.isNewCategory ? " (nueva categoría creada automáticamente)" : ""
+          }.`
         );
         await loadDashboard();
       }
@@ -1961,6 +2340,10 @@ export default function AdminDashboardClient() {
                   onChange={(e) => setDocCategory(e.target.value)}
                   className="min-h-11 w-full rounded-xl border border-white/10 bg-[#07090F] px-3.5 text-sm text-white"
                 >
+                  <option value="__auto__">
+                    Colocar en categoría automáticamente (IA analiza o crea una
+                    nueva)
+                  </option>
                   <option value="pedem">Método PEDEM y Bitácora</option>
                   <option value="la_rueda">Estrategia La Rueda</option>
                   <option value="indicadores">
@@ -2005,6 +2388,7 @@ export default function AdminDashboardClient() {
                     </label>
                     <input
                       id={`${uid}-doc-custom-cat`}
+                      name="customCategory"
                       type="text"
                       required
                       autoFocus
@@ -2029,36 +2413,76 @@ export default function AdminDashboardClient() {
 
               {/* ==================== MODO OPCIÓN A: SUBIDA MASIVA DE ARCHIVOS ==================== */}
               {ingestMode === "files" && (
-                <form onSubmit={handleBulkFilesIngest} className="space-y-4">
+                <form
+                  method="POST"
+                  action="/api/admin/knowledge/ingest"
+                  onSubmit={handleBulkFilesIngest}
+                  className="space-y-4"
+                >
                   <div>
                     <label
                       htmlFor={`${uid}-file-drop`}
-                      className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-violet-500/35 bg-[#07090F]/90 px-6 py-8 text-center transition-colors duration-200 hover:border-violet-400 hover:bg-violet-500/[0.06]"
+                      onDragEnter={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setIsDraggingFiles(true);
+                      }}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (!isDraggingFiles) setIsDraggingFiles(true);
+                      }}
+                      onDragLeave={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (e.currentTarget.contains(e.relatedTarget as Node)) {
+                          return;
+                        }
+                        setIsDraggingFiles(false);
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setIsDraggingFiles(false);
+                        if (e.dataTransfer?.files?.length) {
+                          appendIncomingFiles(Array.from(e.dataTransfer.files));
+                        }
+                      }}
+                      className={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 py-8 text-center transition-colors duration-200 ${
+                        isDraggingFiles
+                          ? "border-emerald-400 bg-emerald-500/10 ring-2 ring-emerald-400/30"
+                          : "border-violet-500/35 bg-[#07090F]/90 hover:border-violet-400 hover:bg-violet-500/[0.06]"
+                      }`}
                     >
                       <Upload
-                        className="h-8 w-8 text-violet-400"
+                        className={`h-8 w-8 ${
+                          isDraggingFiles ? "text-emerald-300" : "text-violet-400"
+                        }`}
                         aria-hidden="true"
                       />
                       <span className="mt-3 text-sm font-bold text-white">
-                        Selecciona o arrastra tus PDFs, Word (.docx), Imágenes o
-                        Markdown
+                        {isDraggingFiles
+                          ? "¡Suelta aquí tus archivos para agregarlos a la cola!"
+                          : "Arrastra y suelta aquí tus PDFs, Word (.docx), Imágenes o haz clic para explorar"}
                       </span>
                       <span className="mt-1 max-w-md text-xs leading-relaxed text-slate-400">
-                        Puedes seleccionar varios archivos a la vez.{" "}
+                        Soporta libros PDF pesados (hasta 100 MB) y múltiples
+                        archivos simultáneos en segundo plano.{" "}
                         <strong className="text-slate-200">
                           Gemini 3.8 Multimodal
                         </strong>{" "}
-                        leerá tanto el texto como las imágenes, tablas y
-                        gráficos dentro de cada PDF.
+                        leerá texto, tablas e imágenes.
                       </span>
                       <input
                         id={`${uid}-file-drop`}
+                        name="files"
                         type="file"
                         multiple
                         accept=".pdf,.docx,.png,.jpg,.jpeg,.webp,.txt,.md,.csv"
                         onChange={(e) => {
-                          if (e.target.files) {
-                            setSelectedFiles(Array.from(e.target.files));
+                          if (e.target.files?.length) {
+                            appendIncomingFiles(Array.from(e.target.files));
+                            e.target.value = "";
                           }
                         }}
                         className="sr-only"
@@ -2077,6 +2501,7 @@ export default function AdminDashboardClient() {
                       </label>
                       <input
                         id={`${uid}-single-file-title`}
+                        name="customTitle"
                         type="text"
                         value={docTitle}
                         onChange={(e) => setDocTitle(e.target.value)}
@@ -2112,7 +2537,9 @@ export default function AdminDashboardClient() {
                           >
                             <span className="truncate">{f.name}</span>
                             <span className="ml-2 shrink-0 text-slate-400">
-                              {(f.size / 1024).toFixed(0)} KB
+                              {f.size >= 1024 * 1024
+                                ? `${(f.size / (1024 * 1024)).toFixed(2)} MB`
+                                : `${(f.size / 1024).toFixed(0)} KB`}
                             </span>
                           </li>
                         ))}
@@ -2122,14 +2549,13 @@ export default function AdminDashboardClient() {
 
                   <button
                     type="submit"
-                    disabled={indexingDoc || selectedFiles.length === 0}
-                    className="inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-600/25 transition-colors duration-200 hover:from-violet-500 hover:to-indigo-500 disabled:opacity-60"
+                    className="inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-600/25 transition-colors duration-200 hover:from-violet-500 hover:to-indigo-500"
                   >
                     <Upload className="h-4 w-4" aria-hidden="true" />
                     <span>
-                      {indexingDoc
-                        ? "Extrayendo texto + imágenes y vectorizando..."
-                        : `Procesar e Indexar ${selectedFiles.length || ""} Archivo(s) en Supabase`}
+                      {selectedFiles.length > 0
+                        ? `Subir y Procesar ${selectedFiles.length} Archivo(s) en Segundo Plano`
+                        : "Subir y Procesar Archivo(s) en Segundo Plano"}
                     </span>
                   </button>
                 </form>
@@ -2148,7 +2574,7 @@ export default function AdminDashboardClient() {
                       htmlFor={`${uid}-drive-urls`}
                       className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-300"
                     >
-                      URLs Web (Páginas, Artículos, PDFs online) o Enlaces de
+                      URLs Web, Documentos de Drive o Carpetas Completas de
                       Google Drive *
                     </label>
                     <textarea
@@ -2163,7 +2589,7 @@ export default function AdminDashboardClient() {
                       value={driveUrlsText}
                       onChange={(e) => setDriveUrlsText(e.target.value)}
                       placeholder={
-                        "Pega una o varias URLs públicas (una por línea):\nhttps://ingresarios.com/...\nhttps://tu-sitio.com/guia-metodo-pedem.pdf\nhttps://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOpQrStUvWxYz\nhttps://docs.google.com/document/d/1LMN.../edit"
+                        "Pega una o varias URLs públicas (una por línea):\nhttps://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrStUvWxYz/view\nhttps://drive.google.com/drive/folders/1CarpetaCon20Documentos...\nhttps://docs.google.com/document/d/1LMN.../edit\nhttps://ingresarios.com/..."
                       }
                       className="w-full rounded-2xl border border-white/10 bg-[#07090F] p-4 font-mono text-xs leading-relaxed text-white"
                     />
@@ -2171,15 +2597,17 @@ export default function AdminDashboardClient() {
                       id={`${uid}-drive-urls-help`}
                       className="mt-1.5 text-xs text-slate-400"
                     >
-                      Puedes pegar{" "}
+                      Soporta tanto la{" "}
                       <strong className="text-slate-200">
-                        cualquier página web pública
+                        URL directa de un documento de Google Drive / Docs
                       </strong>{" "}
-                      (landings, FAQs, blogs, centros de ayuda o PDFs en línea)
-                      o enlaces/carpetas públicas de{" "}
-                      <strong className="text-slate-200">Google Drive</strong>.{" "}
-                      <code>GENY PRO</code> leerá la página, limpiará menús y
-                      vectorizará su contenido a 768 dimensiones.
+                      como la{" "}
+                      <strong className="text-slate-200">
+                        URL de una carpeta pública completa de Google Drive
+                      </strong>{" "}
+                      (ej. con 20 o más PDFs/Word), además de páginas web.{" "}
+                      <code>GENY PRO</code> lista todos los archivos de la
+                      carpeta y los procesa uno por uno en segundo plano.
                     </p>
                   </div>
 
@@ -2191,8 +2619,8 @@ export default function AdminDashboardClient() {
                     <Globe className="h-4 w-4" aria-hidden="true" />
                     <span>
                       {indexingDoc
-                        ? "Leyendo URLs y vectorizando en Cerebro IA..."
-                        : "Leer URLs y Aprender en Cerebro IA"}
+                        ? "Inspeccionando carpeta/enlaces..."
+                        : "Leer Enlaces / Carpeta en Segundo Plano"}
                     </span>
                   </button>
                 </form>
@@ -4067,6 +4495,170 @@ export default function AdminDashboardClient() {
           </div>
         )}
       </dialog>
+
+      {/* Monitor persistente de carga y vectorización RAG en segundo plano (visible al cambiar de pestaña) */}
+      {ingestJobs.length > 0 &&
+        (() => {
+          const doneCount = ingestJobs.filter((j) => j.stage === "done").length;
+          const errorCount = ingestJobs.filter(
+            (j) => j.stage === "error"
+          ).length;
+          const finishedCount = doneCount + errorCount;
+          const totalCount = ingestJobs.length;
+
+          return (
+            <aside
+              aria-label="Monitor de carga y vectorización de conocimiento"
+              className="fixed right-4 bottom-4 z-40 w-[min(450px,calc(100vw-2rem))] rounded-2xl border border-violet-500/35 bg-[#0A0D16]/95 p-4 shadow-2xl shadow-black/80 backdrop-blur-xl"
+            >
+              <p role="status" aria-live="polite" className="sr-only">
+                {hasActiveIngestJobs
+                  ? `Procesando documentos en segundo plano: ${finishedCount} de ${totalCount} finalizados.`
+                  : `Procesamiento en segundo plano finalizado: ${doneCount} completados y ${errorCount} con error.`}
+              </p>
+
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  {hasActiveIngestJobs ? (
+                    <RefreshCw
+                      className="h-4 w-4 shrink-0 animate-spin text-violet-300"
+                      aria-hidden="true"
+                    />
+                  ) : errorCount > 0 && doneCount === 0 ? (
+                    <AlertTriangle
+                      className="h-4 w-4 shrink-0 text-rose-400"
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    <CheckCircle2
+                      className="h-4 w-4 shrink-0 text-emerald-400"
+                      aria-hidden="true"
+                    />
+                  )}
+                  <div>
+                    <p className="text-xs font-extrabold tracking-tight text-white">
+                      {hasActiveIngestJobs
+                        ? `GENY PRO · Procesando (${finishedCount}/${totalCount})`
+                        : `GENY PRO · Carga Finalizada (${doneCount}/${totalCount})`}
+                    </p>
+                    <p className="text-[11px] text-slate-400">
+                      {hasActiveIngestJobs
+                        ? "Sigue activo en 2.º plano aunque cambies de pestaña"
+                        : errorCount > 0
+                          ? `${doneCount} indexado(s) · ${errorCount} con alerta`
+                          : "Todos los documentos quedaron vectorizados en Supabase (768d)"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    aria-expanded={!ingestDrawerMinimized}
+                    aria-controls={`${uid}-ingest-drawer-body`}
+                    onClick={() => setIngestDrawerMinimized((prev) => !prev)}
+                    className="cursor-pointer rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] font-semibold text-slate-200 hover:bg-white/10"
+                  >
+                    {ingestDrawerMinimized ? "Ver detalle" : "Minimizar"}
+                  </button>
+                  {!hasActiveIngestJobs && (
+                    <button
+                      type="button"
+                      onClick={() => setIngestJobs([])}
+                      aria-label="Cerrar monitor de procesamiento"
+                      className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-slate-300 hover:bg-rose-500/20 hover:text-rose-200"
+                    >
+                      <X className="h-3.5 w-3.5" aria-hidden="true" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-3">
+                <progress
+                  className="geny-progress"
+                  value={finishedCount}
+                  max={totalCount}
+                  aria-label="Progreso total de la cola de documentos"
+                />
+              </div>
+
+              <div
+                id={`${uid}-ingest-drawer-body`}
+                hidden={ingestDrawerMinimized}
+                className="mt-3 max-h-64 space-y-2 overflow-y-auto pr-1"
+              >
+                {ingestJobs.map((job) => (
+                  <div
+                    key={job.id}
+                    className="rounded-xl border border-white/[0.08] bg-[#06080E]/90 p-3"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span
+                        className="truncate text-xs font-semibold text-white"
+                        title={job.name}
+                      >
+                        {job.name}
+                      </span>
+                      <span
+                        className={`shrink-0 rounded-full px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider ${
+                          job.stage === "done"
+                            ? "border border-emerald-500/30 bg-emerald-500/15 text-emerald-300"
+                            : job.stage === "error"
+                              ? "border border-rose-500/30 bg-rose-500/15 text-rose-300"
+                              : job.stage === "uploading"
+                                ? "border border-sky-500/30 bg-sky-500/15 text-sky-300"
+                                : job.stage === "analyzing"
+                                  ? "border border-violet-500/30 bg-violet-500/15 text-violet-300"
+                                  : "border border-white/10 bg-white/[0.05] text-slate-400"
+                        }`}
+                      >
+                        {job.stage === "queued" && "En cola"}
+                        {job.stage === "uploading" &&
+                          `Subiendo ${job.uploadPercent ?? 0}%`}
+                        {job.stage === "analyzing" && "Analizando IA"}
+                        {job.stage === "done" && "Completado"}
+                        {job.stage === "error" && "Error"}
+                      </span>
+                    </div>
+
+                    {(job.stage === "uploading" ||
+                      job.stage === "analyzing") && (
+                      <div className="mt-2">
+                        {job.stage === "uploading" ? (
+                          <progress
+                            className="geny-progress"
+                            value={job.uploadPercent ?? 0}
+                            max={100}
+                            aria-label={`Subiendo ${job.name}`}
+                          />
+                        ) : (
+                          <progress
+                            className="geny-progress"
+                            max={100}
+                            aria-label={`Analizando y vectorizando ${job.name}`}
+                          />
+                        )}
+                      </div>
+                    )}
+
+                    <p
+                      className={`mt-1.5 text-[11px] leading-snug ${
+                        job.stage === "error"
+                          ? "text-rose-300"
+                          : job.stage === "done"
+                            ? "text-emerald-200/90"
+                            : "text-slate-400"
+                      }`}
+                    >
+                      {job.detailText}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </aside>
+          );
+        })()}
     </div>
   );
 }

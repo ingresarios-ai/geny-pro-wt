@@ -36,11 +36,11 @@ Este archivo se carga automáticamente como memoria persistente del espacio de t
 3. **Gestión Completa de Usuarios y Filtros Inteligentes (`/admin`):**
    - Edición completa de usuario en modal (`Editar / Ficha`): nombre, email, teléfono WhatsApp (normalizado a E.164 con respaldo automático en historial), Telegram ID y `@username`, plan, estado y fecha de vencimiento.
    - Filtros combinables en **Usuarios y Candado 90d**: Plan, Vencimiento (`≤ 7d`, `≤ 15d`, `≤ 30d`, `Vencidos`, `Permanentes`), Estado, Dispositivos/Candado 90d, Origen, Ordenamiento inteligente y **Exportación CSV de la vista filtrada** (`handleExportFilteredCsv`).
-4. **Ingesta Multimodal RAG (Opciones A y B activas en `/api/admin/knowledge/ingest`):**
-   - Categorías metodológicas personalizables (`+ Crear nueva categoría...`).
-   - **Opción A:** Subida directa de múltiples archivos (`.pdf`, `.docx` con extracción de imágenes internas `word/media/*`, `.png/.jpg/.webp`, `.txt/.md/.csv`) procesados con Visión Multimodal de `gemini-3.8-flash`.
-   - **Opción B:** Importación directa pegando enlaces de archivos, Google Docs o carpetas públicas de Google Drive.
-   - Visor/Editor de documentos indexados (`Ver / Editar`) e insignia **`Cerebro IA Conectado 768 dims`**.
+4. **Ingesta Multimodal RAG en Segundo Plano (Opciones A y B en `/api/admin/knowledge/ingest`):**
+   - **Categorización Automática IA por defecto (`__auto__`):** Opción predeterminada `"Colocar en categoría automáticamente (IA analiza o crea una nueva)"` mediante `resolveOrAutoClassifyCategory`, además de categorías existentes o manuales (`+ Crear otra categoría...`).
+   - **Opción A (Drag & Drop + Libros Pesados hasta 100 MB):** Subida directa firmada a Supabase Storage (`geny-knowledge-temp`) con barra de progreso real (`0–100%`) + Gemini File API para archivos > 5 MB (`maxDuration = 300`).
+   - **Opción B (URLs Web + Documentos o Carpetas Completas de Google Drive):** Soporta páginas web públicas, enlaces directos de documentos y carpetas públicas completas de Drive (ej. 20+ archivos expandidos con `expand_targets` y procesados 1 por 1 en cola) + botón `Re-leer`.
+   - **Monitor Persistente en 2.º Plano:** Cajón flotante global en `/admin` (`Subiendo %` → `Analizando IA` → `Completado` / `Error`) activo aunque se cambie de pestaña, más visor/editor (`Ver / Editar`) e insignia **`Cerebro IA Conectado 768 dims`**.
 5. **Bóveda de APIs en Tiempo Real + Zona de Peligro (`/admin` → Motor IA, APIs y Reglas):**
    - Las 14 llaves/tokens (`MANAGED_SECRET_KEYS`) se pueden actualizar desde `/admin` y se guardan en `geny_settings.runtime_secrets` en Supabase con hot-reload inmediato.
    - Alerta obligatoria de **Zona de Peligro** antes de desbloquear la edición y botón **`Restaurar a la Última Versión Funcional`** (`geny_settings_snapshots` / `previous_working_snapshot`).

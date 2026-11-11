@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth/admin-session";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { indexKnowledgeDocument } from "@/lib/geny/rag";
+import { getGenySettings, getSupabaseAdmin } from "@/lib/supabase/admin";
+import {
+  indexKnowledgeDocument,
+  resolveOrAutoClassifyCategory,
+} from "@/lib/geny/rag";
 
 export const maxDuration = 60;
 
@@ -52,15 +55,14 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  await getGenySettings();
   const supabase = getSupabaseAdmin();
-  const category = (body.category || "general").trim().toLowerCase();
-
-  if (!category) {
-    return NextResponse.json(
-      { error: "Ingresa o selecciona una categoría metodológica válida." },
-      { status: 400 }
-    );
-  }
+  const { category, autoClassified, isNewCategory } =
+    await resolveOrAutoClassifyCategory({
+      requestedCategory: body.category || "__auto__",
+      title: body.title.trim(),
+      rawContent: body.rawContent.trim(),
+    });
 
   const { data: doc, error } = body.documentId
     ? await supabase
@@ -99,7 +101,13 @@ export async function POST(req: NextRequest) {
     rawContent: body.rawContent.trim(),
   });
 
-  return NextResponse.json({ ok: true, document: doc, chunksIndexed });
+  return NextResponse.json({
+    ok: true,
+    document: doc,
+    chunksIndexed,
+    autoClassified,
+    isNewCategory,
+  });
 }
 
 export async function DELETE(req: NextRequest) {

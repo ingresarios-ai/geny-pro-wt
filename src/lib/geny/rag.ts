@@ -1,4 +1,121 @@
+import { generateText } from "ai";
+import { google } from "@ai-sdk/google";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+
+const BASE_CATEGORIES = [
+  "pedem",
+  "la_rueda",
+  "indicadores",
+  "psicotrading",
+  "faq",
+  "general",
+];
+
+function sanitizeCategorySlug(raw: string): string {
+  return raw
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 36);
+}
+
+export async function resolveOrAutoClassifyCategory(params: {
+  requestedCategory?: string | null;
+  title: string;
+  rawContent: string;
+}): Promise<{
+  category: string;
+  autoClassified: boolean;
+  isNewCategory: boolean;
+}> {
+  const reqCat = (params.requestedCategory || "").trim();
+  if (reqCat && reqCat !== "__auto__") {
+    const normalized = sanitizeCategorySlug(reqCat) || "general";
+    return {
+      category: normalized,
+      autoClassified: false,
+      isNewCategory: false,
+    };
+  }
+
+  const supabase = getSupabaseAdmin();
+  const { data: existingRows } = await supabase
+    .from("geny_knowledge_documents")
+    .select("category");
+
+  const existingSet = new Set<string>(BASE_CATEGORIES);
+  for (const r of existingRows || []) {
+    if (r.category) existingSet.add(r.category);
+  }
+  const existingList = Array.from(existingSet);
+
+  const headSample = params.rawContent.slice(0, 3500);
+  const midStart = Math.max(0, Math.floor(params.rawContent.length / 2) - 750);
+  const midSample =
+    params.rawContent.length > 4500
+      ? `\n\n[...]\n\n${params.rawContent.slice(midStart, midStart + 1500)}`
+      : "";
+
+  const prompt = `Eres el bibliotecario jefe del Cerebro IA de GENY PRO (academia de trading e inversión INGRESARIOS).
+Analiza el título y extracto de este documento y clasifícalo en la categoría metodológica más precisa.
+
+CATEGORÍAS EXISTENTES ACTUALMENTE:
+- pedem: Método PEDEM, plan de trading, bitácora operativa, reglas del método INGRESARIOS.
+- la_rueda: Estrategia La Rueda (The Wheel), venta de puts/calls cubiertos, opciones para flujo.
+- indicadores: Indicadores técnicos propios como Reditum Sniper, Geny Trend, configuración en TradingView.
+- psicotrading: Mentalidad, gestión emocional, disciplina, miedo, FOMO, sobreoperativa, hábitos del trader.
+- faq: Preguntas frecuentes administrativas, soporte, accesos, horarios, membresías, pagos.
+- general: Información institucional general de INGRESARIOS cuando abarca muchos temas distintos.
+${existingList
+  .filter((c) => !BASE_CATEGORIES.includes(c))
+  .map((c) => `- ${c}: Categoría personalizada existente en la academia.`)
+  .join("\n")}
+
+REGLAS DE DECISIÓN:
+1. Si el documento encaja claramente en una de las categorías existentes de la lista anterior, devuelve exactamente el identificador de esa categoría existente.
+2. Si el documento trata de una temática específica que NO encaja bien en ninguna categoría existente (por ejemplo: gestion_de_riesgo, opciones_financieras, analisis_tecnico, cuentas_fondeo, acciones_etfs, fiscalidad, etc.), CREA un nuevo identificador corto en español (1 a 3 palabras en snake_case, sin tildes ni caracteres especiales).
+3. Responde ÚNICAMENTE con el identificador en minúsculas (una sola palabra en snake_case, sin explicaciones ni comillas).
+
+Título del documento: ${params.title}
+Extracto del contenido:
+${headSample}${midSample}`;
+
+  const models = [
+    "gemini-3.8-flash",
+    "gemini-3.5-flash",
+    "gemini-3.5-flash-lite",
+  ];
+
+  for (const modelId of models) {
+    try {
+      const res = await generateText({
+        model: google(modelId),
+        prompt,
+        maxTokens: 32,
+        temperature: 0,
+      });
+      const firstToken = res.text.trim().split(/[\s\r\n,.;:]+/)[0] || "";
+      const slug = sanitizeCategorySlug(firstToken);
+      if (slug && slug !== "auto") {
+        return {
+          category: slug,
+          autoClassified: true,
+          isNewCategory: !existingSet.has(slug),
+        };
+      }
+    } catch {
+      // Probar siguiente modelo
+    }
+  }
+
+  return {
+    category: "general",
+    autoClassified: true,
+    isNewCategory: false,
+  };
+}
 
 export interface RetrievedChunk {
   id: string;
@@ -91,19 +208,31 @@ export async function indexKnowledgeDocument(params: {
     .delete()
     .eq("document_id", params.documentId);
 
-  const rows = [];
-  for (let i = 0; i < chunks.length; i++) {
-    const embedding = await generateEmbedding768(
-      `${params.title}\n${chunks[i]}`
+  const rows: Array<{
+    document_id: string;
+    document_title: string;
+    category: string;
+    chunk_index: number;
+    content: string;
+    embedding: number[] | null;
+  }> = [];
+
+  const BATCH_SIZE = 8;
+  for (let start = 0; start < chunks.length; start += BATCH_SIZE) {
+    const slice = chunks.slice(start, start + BATCH_SIZE);
+    const embeddings = await Promise.all(
+      slice.map((chunk) => generateEmbedding768(`${params.title}\n${chunk}`))
     );
-    rows.push({
-      document_id: params.documentId,
-      document_title: params.title,
-      category: params.category,
-      chunk_index: i,
-      content: chunks[i],
-      embedding,
-    });
+    for (let j = 0; j < slice.length; j++) {
+      rows.push({
+        document_id: params.documentId,
+        document_title: params.title,
+        category: params.category,
+        chunk_index: start + j,
+        content: slice[j],
+        embedding: embeddings[j],
+      });
+    }
   }
 
   if (rows.length > 0) {

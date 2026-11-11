@@ -8,9 +8,14 @@ import {
   getSupabaseAdmin,
   isSupabaseAdminConfigured,
 } from "@/lib/supabase/admin";
-import { indexKnowledgeDocument } from "@/lib/geny/rag";
+import {
+  indexKnowledgeDocument,
+  resolveOrAutoClassifyCategory,
+} from "@/lib/geny/rag";
 
-export const maxDuration = 60;
+export const maxDuration = 300;
+
+const STORAGE_BUCKET = "geny-knowledge-temp";
 
 const MULTIMODAL_EXTRACTION_PROMPT = `Eres el Ingeniero de Conocimiento Multimodal de GENY PRO (INGRESARIOS).
 Tu tarea es convertir este documento o archivo en una guía técnica completa en formato Markdown para la base de conocimiento vectorial (RAG) de GENY PRO.
@@ -21,6 +26,81 @@ REGLAS ESTRICTAS DE EXTRACCIÓN:
    ### [ANÁLISIS VISUAL DE GRÁFICO / IMAGEN EN DOCUMENTO]
    Describe con precisión técnica todo lo que enseña esa imagen: qué indicador o estructura aparece, qué colores/bandas/señales se observan, qué regla operativa ilustra y qué texto o anotaciones aparecen dentro de la imagen.
 3. Responde únicamente con el contenido técnico en español en formato Markdown limpio, listo para ser indexado.`;
+
+async function uploadBufferToGeminiFileApi(params: {
+  fileName: string;
+  mimeType: string;
+  buffer: Buffer;
+}): Promise<{ name: string; uri: string } | null> {
+  const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY?.trim();
+  if (!apiKey) return null;
+
+  const startRes = await fetch(
+    `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: {
+        "X-Goog-Upload-Protocol": "resumable",
+        "X-Goog-Upload-Command": "start",
+        "X-Goog-Upload-Header-Content-Length": String(params.buffer.length),
+        "X-Goog-Upload-Header-Content-Type": params.mimeType,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        file: { display_name: params.fileName.slice(0, 120) },
+      }),
+    }
+  );
+
+  const uploadUrl = startRes.headers.get("x-goog-upload-url");
+  if (!startRes.ok || !uploadUrl) return null;
+
+  const finalizeRes = await fetch(uploadUrl, {
+    method: "POST",
+    headers: {
+      "Content-Length": String(params.buffer.length),
+      "X-Goog-Upload-Offset": "0",
+      "X-Goog-Upload-Command": "upload, finalize",
+    },
+    body: new Uint8Array(params.buffer),
+  });
+
+  if (!finalizeRes.ok) return null;
+  const json = (await finalizeRes.json()) as {
+    file?: { name?: string; uri?: string; state?: string };
+  };
+  const fileNameId = json.file?.name;
+  const fileUri = json.file?.uri;
+  if (!fileNameId || !fileUri) return null;
+
+  // Esperar si Gemini aún está indexando el PDF grande (PROCESSING -> ACTIVE)
+  let state = json.file?.state || "ACTIVE";
+  for (let attempt = 0; attempt < 10 && state === "PROCESSING"; attempt++) {
+    await new Promise((r) => setTimeout(r, 1500));
+    const checkRes = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/${fileNameId}?key=${apiKey}`
+    );
+    if (checkRes.ok) {
+      const checkJson = (await checkRes.json()) as { state?: string };
+      state = checkJson.state || "ACTIVE";
+    }
+  }
+
+  return state === "ACTIVE" ? { name: fileNameId, uri: fileUri } : null;
+}
+
+async function deleteGeminiUploadedFile(name: string): Promise<void> {
+  const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY?.trim();
+  if (!apiKey || !name) return;
+  try {
+    await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/${name}?key=${apiKey}`,
+      { method: "DELETE" }
+    );
+  } catch {
+    // Ignorar error de limpieza
+  }
+}
 
 async function extractWithGeminiVision(params: {
   fileName: string;
@@ -35,58 +115,84 @@ async function extractWithGeminiVision(params: {
   ];
 
   let lastError: unknown = null;
+  let uploadedGeminiFile: { name: string; uri: string } | null = null;
 
-  for (const modelId of candidateModels) {
+  // Para libros o PDFs grandes (> 5 MB), usar Gemini File Upload API evita límites de payload inline
+  if (params.buffer.length > 5 * 1024 * 1024) {
     try {
-      const contentParts: UserContent = [
-        {
-          type: "text",
-          text: `${MULTIMODAL_EXTRACTION_PROMPT}\n\nArchivo fuente: "${params.fileName}"${
-            params.extraContextText
-              ? `\n\nTexto extraído previamente del documento:\n${params.extraContextText}`
-              : ""
-          }`,
-        },
-      ];
-
-      if (params.mimeType.startsWith("image/")) {
-        contentParts.push({
-          type: "image",
-          image: params.buffer,
-          mimeType: params.mimeType,
-        });
-      } else {
-        contentParts.push({
-          type: "file",
-          data: params.buffer,
-          mimeType: params.mimeType,
-        });
-      }
-
-      const messages: CoreMessage[] = [
-        {
-          role: "user",
-          content: contentParts,
-        },
-      ];
-
-      const result = await generateText({
-        model: google(modelId),
-        messages,
-        maxTokens: 4096,
-        temperature: 0.1,
+      uploadedGeminiFile = await uploadBufferToGeminiFileApi({
+        fileName: params.fileName,
+        mimeType: params.mimeType,
+        buffer: params.buffer,
       });
+    } catch {
+      uploadedGeminiFile = null;
+    }
+  }
 
-      const extracted = result.text.trim();
-      if (extracted) {
-        return extracted;
+  try {
+    for (const modelId of candidateModels) {
+      try {
+        const contentParts: UserContent = [
+          {
+            type: "text",
+            text: `${MULTIMODAL_EXTRACTION_PROMPT}\n\nArchivo fuente: "${params.fileName}"${
+              params.extraContextText
+                ? `\n\nTexto extraído previamente del documento:\n${params.extraContextText}`
+                : ""
+            }`,
+          },
+        ];
+
+        if (uploadedGeminiFile) {
+          contentParts.push({
+            type: "file",
+            data: new URL(uploadedGeminiFile.uri),
+            mimeType: params.mimeType,
+          });
+        } else if (params.mimeType.startsWith("image/")) {
+          contentParts.push({
+            type: "image",
+            image: params.buffer,
+            mimeType: params.mimeType,
+          });
+        } else {
+          contentParts.push({
+            type: "file",
+            data: params.buffer,
+            mimeType: params.mimeType,
+          });
+        }
+
+        const messages: CoreMessage[] = [
+          {
+            role: "user",
+            content: contentParts,
+          },
+        ];
+
+        const result = await generateText({
+          model: google(modelId),
+          messages,
+          maxTokens: 16384,
+          temperature: 0.1,
+        });
+
+        const extracted = result.text.trim();
+        if (extracted) {
+          return extracted;
+        }
+      } catch (err) {
+        lastError = err;
+        console.warn(
+          `[GENY RAG Ingest] Modelo ${modelId} falló al procesar ${params.fileName}:`,
+          err instanceof Error ? err.message : err
+        );
       }
-    } catch (err) {
-      lastError = err;
-      console.warn(
-        `[GENY RAG Ingest] Modelo ${modelId} falló al procesar ${params.fileName}:`,
-        err instanceof Error ? err.message : err
-      );
+    }
+  } finally {
+    if (uploadedGeminiFile) {
+      await deleteGeminiUploadedFile(uploadedGeminiFile.name);
     }
   }
 
@@ -273,8 +379,15 @@ async function saveAndIndexDocument(params: {
 }) {
   const supabase = getSupabaseAdmin();
   const cleanTitle = params.title.trim();
-  const cleanCategory =
-    params.category.trim().toLowerCase().replace(/\s+/g, "_") || "general";
+  const {
+    category: cleanCategory,
+    autoClassified,
+    isNewCategory,
+  } = await resolveOrAutoClassifyCategory({
+    requestedCategory: params.category,
+    title: cleanTitle,
+    rawContent: params.rawContent,
+  });
   const normalizedUrl = params.sourceUrl?.trim() || null;
 
   let existingId: string | null = null;
@@ -327,7 +440,7 @@ async function saveAndIndexDocument(params: {
     rawContent: params.rawContent,
   });
 
-  return { doc, chunksIndexed };
+  return { doc, chunksIndexed, category: doc.category, autoClassified, isNewCategory };
 }
 
 function isSafeExternalHttpUrl(rawUrl: string): boolean {
@@ -773,11 +886,11 @@ export async function POST(req: NextRequest) {
   try {
     const contentType = req.headers.get("content-type") || "";
 
-    // MODO A: Subida de archivo binario vía FormData (PDF, Imagen, DOCX, TXT, MD)
+    // MODO A (legado archivos pequeños): Subida de archivo binario vía FormData
     if (contentType.includes("multipart/form-data")) {
       const form = await req.formData();
       const file = form.get("file");
-      const category = String(form.get("category") || "general");
+      const category = String(form.get("category") || "__auto__");
       const customTitle = String(form.get("title") || "").trim();
 
       if (!(file instanceof File)) {
@@ -808,7 +921,7 @@ export async function POST(req: NextRequest) {
       const cleanTitle =
         customTitle || file.name.replace(/\.[a-zA-Z0-9]+$/, "");
 
-      const { doc, chunksIndexed } = await saveAndIndexDocument({
+      const saved = await saveAndIndexDocument({
         title: cleanTitle,
         category,
         rawContent: extractedMarkdown,
@@ -816,18 +929,203 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({
         ok: true,
-        document: doc,
-        chunksIndexed,
+        document: saved.doc,
+        category: saved.category,
+        autoClassified: saved.autoClassified,
+        isNewCategory: saved.isNewCategory,
+        chunksIndexed: saved.chunksIndexed,
         charactersExtracted: extractedMarkdown.length,
       });
     }
 
-    // MODO B: Importación universal desde URLs Web (páginas, artículos, PDFs online) o Google Drive
     const body = (await req.json()) as {
+      action?: "create_upload_url" | "ingest_storage_file" | "expand_targets";
+      fileName?: string;
+      mimeType?: string;
+      storagePath?: string;
+      title?: string;
+      titleHint?: string;
       driveUrls?: string;
       category?: string;
     };
 
+    // ACCIÓN 1: Crear URL firmada para subida directa a Supabase Storage (soporta PDFs pesados > 4.5 MB con progreso real 0-100%)
+    if (body.action === "create_upload_url") {
+      const supabase = getSupabaseAdmin();
+      const safeName = (body.fileName || "documento.pdf")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9._-]+/g, "_")
+        .slice(-90);
+      const storagePath = `ingest/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safeName}`;
+
+      const { data, error } = await supabase.storage
+        .from(STORAGE_BUCKET)
+        .createSignedUploadUrl(storagePath);
+
+      if (error || !data?.signedUrl) {
+        return NextResponse.json(
+          {
+            error:
+              error?.message ||
+              "No se pudo generar enlace de subida en Supabase Storage.",
+          },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({
+        ok: true,
+        signedUrl: data.signedUrl,
+        storagePath,
+      });
+    }
+
+    // ACCIÓN 2: Procesar archivo ya subido a Supabase Storage y limpiar el archivo temporal al terminar
+    if (body.action === "ingest_storage_file") {
+      if (!body.storagePath || !body.fileName) {
+        return NextResponse.json(
+          { error: "Falta storagePath o fileName." },
+          { status: 400 }
+        );
+      }
+
+      const supabase = getSupabaseAdmin();
+      try {
+        const { data: blobData, error: dlErr } = await supabase.storage
+          .from(STORAGE_BUCKET)
+          .download(body.storagePath);
+
+        if (dlErr || !blobData) {
+          return NextResponse.json(
+            {
+              error:
+                dlErr?.message ||
+                "No se encontró el archivo subido en el almacenamiento temporal.",
+            },
+            { status: 400 }
+          );
+        }
+
+        const arrayBuf = await blobData.arrayBuffer();
+        const buffer = Buffer.from(arrayBuf);
+
+        const extractedMarkdown = await processBufferToMarkdown({
+          fileName: body.fileName,
+          mimeType: body.mimeType || "application/pdf",
+          buffer,
+        });
+
+        if (!extractedMarkdown.trim()) {
+          return NextResponse.json(
+            {
+              error: `No se pudo extraer contenido legible de ${body.fileName}.`,
+            },
+            { status: 400 }
+          );
+        }
+
+        const cleanTitle =
+          (body.title || "").trim() ||
+          body.fileName.replace(/\.[a-zA-Z0-9]+$/, "");
+
+        const saved = await saveAndIndexDocument({
+          title: cleanTitle,
+          category: body.category || "__auto__",
+          rawContent: extractedMarkdown,
+        });
+
+        return NextResponse.json({
+          ok: true,
+          document: saved.doc,
+          category: saved.category,
+          autoClassified: saved.autoClassified,
+          isNewCategory: saved.isNewCategory,
+          chunksIndexed: saved.chunksIndexed,
+          charactersExtracted: extractedMarkdown.length,
+        });
+      } finally {
+        await supabase.storage
+          .from(STORAGE_BUCKET)
+          .remove([body.storagePath])
+          .catch(() => undefined);
+      }
+    }
+
+    // ACCIÓN 3: Expandir carpetas de Google Drive (ej. 20+ documentos) + URLs individuales para cola en segundo plano
+    if (body.action === "expand_targets") {
+      if (!body.driveUrls?.trim()) {
+        return NextResponse.json(
+          {
+            error:
+              "Pega al menos una URL web (https://...) o enlace/carpeta de Google Drive.",
+          },
+          { status: 400 }
+        );
+      }
+
+      const parsed = parseIngestTargets(body.driveUrls);
+      if (parsed.length === 0) {
+        return NextResponse.json(
+          {
+            error:
+              "No se detectaron URLs públicas válidas (https://...) ni enlaces de Google Drive.",
+          },
+          { status: 400 }
+        );
+      }
+
+      const expandedItems: Array<{
+        label: string;
+        url: string;
+        titleHint?: string;
+      }> = [];
+
+      for (const t of parsed) {
+        if (t.type === "folder") {
+          const folderEntries = await expandPublicDriveFolder(t.id);
+          if (folderEntries.length === 0) {
+            return NextResponse.json(
+              {
+                error:
+                  "No se encontraron archivos visibles en la carpeta de Google Drive. Verifica que la carpeta tenga el permiso 'Cualquier persona con el enlace puede ver'.",
+              },
+              { status: 400 }
+            );
+          }
+          for (const entry of folderEntries) {
+            const fileUrl = `https://drive.google.com/file/d/${entry.id}/view`;
+            expandedItems.push({
+              label: entry.titleHint || `Archivo Drive (${entry.id.slice(0, 8)})`,
+              url: fileUrl,
+              titleHint: entry.titleHint,
+            });
+          }
+        } else if (t.type === "gdoc") {
+          expandedItems.push({
+            label: `Google Doc (${t.id.slice(0, 8)})`,
+            url: t.originalUrl,
+          });
+        } else if (t.type === "file") {
+          expandedItems.push({
+            label: `Archivo Drive (${t.id.slice(0, 8)})`,
+            url: t.originalUrl,
+          });
+        } else {
+          expandedItems.push({
+            label: t.originalUrl,
+            url: t.originalUrl,
+          });
+        }
+      }
+
+      return NextResponse.json({
+        ok: true,
+        expandedItems,
+      });
+    }
+
+    // MODO B: Importación universal desde URLs Web (páginas, artículos, PDFs online) o Google Drive
     if (!body.driveUrls?.trim()) {
       return NextResponse.json(
         {
@@ -849,7 +1147,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const category = body.category || "general";
+    const category = body.category || "__auto__";
     const itemsToProcess: Array<
       | {
           kind: "drive";
@@ -895,6 +1193,7 @@ export async function POST(req: NextRequest) {
           kind: "drive",
           type: t.type,
           id: t.id,
+          titleHint: body.titleHint,
           sourceUrl: t.originalUrl,
         });
       }
@@ -902,6 +1201,9 @@ export async function POST(req: NextRequest) {
 
     const importedDocs: Array<{
       title: string;
+      category: string;
+      autoClassified: boolean;
+      isNewCategory: boolean;
       chunksIndexed: number;
     }> = [];
     const errors: string[] = [];
@@ -917,16 +1219,19 @@ export async function POST(req: NextRequest) {
             continue;
           }
 
-          const { doc, chunksIndexed } = await saveAndIndexDocument({
-            title,
+          const saved = await saveAndIndexDocument({
+            title: body.titleHint?.trim() || title,
             category,
             rawContent: markdown,
             sourceUrl: item.sourceUrl,
           });
 
           importedDocs.push({
-            title: doc.title,
-            chunksIndexed,
+            title: saved.doc.title,
+            category: saved.category,
+            autoClassified: saved.autoClassified,
+            isNewCategory: saved.isNewCategory,
+            chunksIndexed: saved.chunksIndexed,
           });
           continue;
         }
@@ -953,7 +1258,7 @@ export async function POST(req: NextRequest) {
           ""
         );
 
-        const { doc, chunksIndexed } = await saveAndIndexDocument({
+        const saved = await saveAndIndexDocument({
           title: cleanTitle,
           category,
           rawContent: extractedMarkdown,
@@ -961,8 +1266,11 @@ export async function POST(req: NextRequest) {
         });
 
         importedDocs.push({
-          title: doc.title,
-          chunksIndexed,
+          title: saved.doc.title,
+          category: saved.category,
+          autoClassified: saved.autoClassified,
+          isNewCategory: saved.isNewCategory,
+          chunksIndexed: saved.chunksIndexed,
         });
       } catch (err) {
         errors.push(
