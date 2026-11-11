@@ -3,6 +3,8 @@ import { isAdminAuthenticated } from "@/lib/auth/admin-session";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { indexKnowledgeDocument } from "@/lib/geny/rag";
 
+export const maxDuration = 60;
+
 export async function GET(req: NextRequest) {
   if (!(await isAdminAuthenticated())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
