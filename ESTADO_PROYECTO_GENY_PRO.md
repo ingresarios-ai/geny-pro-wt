@@ -1,7 +1,9 @@
 # Estado Actual y Memoria del Proyecto — GENY PRO (INGRESARIOS)
 
-**Última actualización:** 10 de noviembre de 2026  
+**Última actualización:** 11 de noviembre de 2026  
 **Directorio del proyecto:** `/Users/josuegarcia/Antigravity/GENY MODELO`  
+**Dominio en Producción (Vercel `iad1`):** `https://genypro.ingresarios.ai/`  
+**Repositorio GitHub:** `https://github.com/ingresarios-ai/geny-pro-wt` (`main`)  
 **Proyecto Supabase conectado:** `geny-pro` (`gejvutumbannwaltklez`, región `us-east-1`)  
 
 ---
@@ -26,10 +28,10 @@ Todas las tablas están creadas en producción con **Row Level Security (RLS)** 
   - **Filtros Inteligentes Combinables:** Por Plan, Vencimiento (`Por vencer ≤ 7d / 15d / 30d`, `Vencidos`, `Permanentes`), Estado, Dispositivos / Candado 90d, Origen y Ordenamiento inteligente.
   - **Exportación CSV Dinámica:** Botón **`Exportar Filtrado (X) CSV`** que descarga en Excel exactamente la combinación de filtros activa.
 - **Conocimiento RAG (`Cerebro IA Conectado 768 dims`):**
-  - Selector de categoría metodológica con opción **`+ Crear nueva categoría...`**.
-  - **Opción A (Subida de archivos locales/descargados):** Soporta múltiples `.pdf`, `.docx` (extrayendo texto e imágenes internas), `.png/.jpg/.webp` y `.txt/.md/.csv`, leídos con Visión Multimodal de `gemini-3.8-flash`.
-  - **Opción B (Enlaces de Google Drive):** Importa archivos individuales, Google Docs y carpetas públicas de Google Drive pegando sus URLs.
-  - Botón **`Ver / Editar`** en cada documento indexado para inspeccionar o corregir el texto extraído y re-vectorizar.
+  - Selector con **Categorización Automática IA por defecto** (`Colocar en categoría automáticamente (IA analiza o crea una nueva)`), categorías existentes y `+ Crear otra categoría...`.
+  - **Opción A (Drag & Drop + Libros Pesados hasta 100 MB):** Subida directa firmada a Supabase Storage (`geny-knowledge-temp`) con progreso real (`0–100%`) + Gemini File API (`maxDuration = 300`) para PDFs grandes, Word `.docx` e imágenes.
+  - **Opción B (URLs Web + Google Drive):** Soporta páginas web públicas, enlaces individuales de documentos y carpetas públicas completas de Google Drive (20+ documentos en cola individual) + botón `Re-leer`.
+  - **Monitor Flotante en 2.º Plano:** Seguimiento en vivo (`En cola` → `Subiendo %` → `Analizando IA` → `Completado` / `Error`) visible aunque se cambie de pestaña en `/admin`, más botón **`Ver / Editar`**.
 - **Bóveda de Llaves API + Zona de Peligro + Rollback 1-Clic:**
   - Modal de advertencia **`⚠️ Cuidado: Zona de Peligro`** al desbloquear la edición en la pestaña **Motor IA, APIs y Reglas**.
   - Edición en vivo de las 14 llaves y tokens (`GOOGLE_GENERATIVE_AI_API_KEY`, `ANTHROPIC_API_KEY`, `GROQ_API_KEY`, `OPENAI_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_APP_SECRET`, `RESEND_API_KEY`, `EMAIL_FROM`, `WHOP_WEBHOOK_SECRET`, `STRIPE_WEBHOOK_SECRET`, `HOTMART_HOTTOK`).
@@ -43,11 +45,11 @@ El usuario seleccionó continuar con:
 > **1. Configurar el Bot de Telegram (`@BotFather`) y preparar el despliegue en Vercel para pruebas reales.**
 
 ### Avance del despliegue en vivo:
-1. ✅ **Bot de Telegram creado y conectado (`@GenyProIngresariosBot`):** Token guardado en `.env.local` y en `geny_settings.runtime_secrets` de Supabase; textos oficiales de bienvenida, biografía y menú `/start` configurados por API.
-2. ⏳ **Desplegar el proyecto en Vercel** (equipo `ingresarios / Reditum Group SAS`, esperando confirmación de contraseña de producción de `/admin`) para obtener la URL pública `https://...` necesaria para los webhooks.
-3. **Activar el Webhook en 1 clic** desde `/admin` → **Canales y Pagos** → **Registrar Webhook en Telegram (1 Clic)**.
-4. **Siguientes hitos después de Telegram:**
-   - Cargar los primeros PDFs / carpetas de Google Drive en **Conocimiento RAG** (y evaluar si se desea también la **Opción C** con Google Service Account para carpetas privadas).
-   - Importar la base de alumnos activos por CSV.
-   - Conectar WhatsApp Cloud API (piloto 30 de noviembre de 2026) y pasarelas de pago (Whop / Stripe / Hotmart).
+1. ✅ **Bot de Telegram creado y conectado (`@GenyProIngresariosBot`):** Token guardado en `.env.local` y en `geny_settings.runtime_secrets` de Supabase; textos oficiales, banner `640x360` y menú `/start` listos.
+2. ✅ **Producción desplegada en `https://genypro.ingresarios.ai/`** (Vercel región `iad1`, conectada a GitHub `ingresarios-ai/geny-pro-wt`).
+3. ✅ **Webhook de Telegram activo en vivo:** `https://genypro.ingresarios.ai/api/webhooks/telegram`.
+4. ⏳ **Siguientes hitos inmediatos:**
+   - Probar en vivo la subida de `libro método Ingresarios.pdf` / carpetas de Google Drive en **Conocimiento RAG** y la conversación real con `@GenyProIngresariosBot` (validación OTP por correo).
+   - Evaluar si se desea la **Opción C** con Google Service Account para carpetas privadas de Drive.
+   - Importar la base de alumnos activos por CSV y conectar WhatsApp Cloud API + pasarelas de pago (Whop / Stripe / Hotmart).
 

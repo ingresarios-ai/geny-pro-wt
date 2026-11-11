@@ -93,8 +93,15 @@ ${headSample}${midSample}`;
       const res = await generateText({
         model: google(modelId),
         prompt,
-        maxTokens: 32,
+        maxTokens: 256,
         temperature: 0,
+        providerOptions: {
+          google: {
+            thinkingConfig: {
+              thinkingBudget: 0,
+            },
+          },
+        },
       });
       const firstToken = res.text.trim().split(/[\s\r\n,.;:]+/)[0] || "";
       const slug = sanitizeCategorySlug(firstToken);
