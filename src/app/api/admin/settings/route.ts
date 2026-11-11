@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth/admin-session";
+import type { AiPricingConfig } from "@/lib/geny/pricing";
 import {
   GenySettingsSnapshot,
   MANAGED_SECRET_KEYS,
@@ -32,6 +33,7 @@ export async function PATCH(req: NextRequest) {
     human_support_url?: string;
     system_prompt_compliant?: string;
     runtime_secrets_updates?: Partial<Record<ManagedSecretKey, string>>;
+    pricing_overrides?: Partial<AiPricingConfig>;
   };
 
   // ACCIÓN 1: RESTAURAR A LA ÚLTIMA VERSIÓN FUNCIONAL
@@ -74,6 +76,7 @@ export async function PATCH(req: NextRequest) {
         human_support_url: snap.human_support_url,
         system_prompt_compliant: snap.system_prompt_compliant,
         runtime_secrets: snap.runtime_secrets || {},
+        pricing_overrides: snap.pricing_overrides || {},
         updated_at: nowIso,
       })
       .eq("id", 1);
@@ -101,6 +104,7 @@ export async function PATCH(req: NextRequest) {
     human_support_url: current.human_support_url,
     system_prompt_compliant: current.system_prompt_compliant,
     runtime_secrets: { ...(current.runtime_secrets || {}) },
+    pricing_overrides: { ...(current.pricing_overrides || {}) },
     saved_at: nowIso,
   };
 
@@ -164,6 +168,16 @@ export async function PATCH(req: NextRequest) {
   }
   if (body.system_prompt_compliant !== undefined) {
     updates.system_prompt_compliant = body.system_prompt_compliant;
+  }
+  if (body.pricing_overrides !== undefined) {
+    const cleanPricing: Partial<AiPricingConfig> = {};
+    for (const [k, v] of Object.entries(body.pricing_overrides)) {
+      const num = Number(v);
+      if (Number.isFinite(num) && num >= 0) {
+        cleanPricing[k as keyof AiPricingConfig] = num;
+      }
+    }
+    updates.pricing_overrides = cleanPricing;
   }
 
   const { error } = await supabase

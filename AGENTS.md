@@ -44,6 +44,9 @@ Este archivo se carga automáticamente como memoria persistente del espacio de t
 5. **Bóveda de APIs en Tiempo Real + Zona de Peligro (`/admin` → Motor IA, APIs y Reglas):**
    - Las 14 llaves/tokens (`MANAGED_SECRET_KEYS`) se pueden actualizar desde `/admin` y se guardan en `geny_settings.runtime_secrets` en Supabase con hot-reload inmediato.
    - Alerta obligatoria de **Zona de Peligro** antes de desbloquear la edición y botón **`Restaurar a la Última Versión Funcional`** (`geny_settings_snapshots` / `previous_working_snapshot`).
+6. **Telemetría de Consumo por Alumno y Estimador de Facturación API (`src/lib/geny/pricing.ts` + RPC `get_geny_usage_analytics`):**
+   - Cálculo exacto en tiempo real del costo USD por cada mensaje (`geny_messages.estimated_cost_usd`, `thoughts_tokens`, `cached_tokens`) diferenciando si respondió **Google Gemini** (`gemini-3.8-flash` / `gemini-3.5-flash` / `lite` + audio nativo) o **Anthropic Claude** (`claude-sonnet-5-5` / `haiku` con Prompt Caching `-90%` + Whisper), más registro separado de extracción/vectorización de libros RAG (`public.geny_rag_usage_logs`).
+   - Panel financiero ejecutivo en `/admin` (Hoy / Mes / Histórico, Gemini vs. Claude, Chat Alumnos vs. Libros RAG, Promedio/Alumno), columna `Consumo IA / Costo` por usuario, ordenamiento `Mayor Consumo IA`, exportación CSV con métricas de uso/costo y tarifas USD/1M editables (`pricing_overrides`).
 
 ## 4. Punto Exacto Donde Nos Quedamos (Próximo Paso Seleccionado)
 - **Estado actual:** **Producción en vivo en `https://genypro.ingresarios.ai/`** con `@GenyProIngresariosBot` conectado por Webhook HTTPS seguro (`iad1`). Listo para **Paso 4: Prueba real en vivo en Telegram** (alta/verificación de miembro con OTP por correo + conversación real con `GENY PRO`).

@@ -118,8 +118,9 @@ dialog::backdrop {
   --label-2: "Plan / Origen";
   --label-3: "Estado";
   --label-4: "Dispositivos (Candado 90d)";
-  --label-5: "Vencimiento";
-  --label-6: "Acciones";
+  --label-5: "Consumo IA / Costo";
+  --label-6: "Vencimiento";
+  --label-7: "Acciones";
 }
 
 .geny-table thead {
@@ -188,6 +189,11 @@ dialog::backdrop {
   }
   .geny-table td:nth-child(6)::before {
     content: var(--label-6) ": ";
+    font-weight: 600;
+    color: #94a3b8;
+  }
+  .geny-table td:nth-child(7)::before {
+    content: var(--label-7) ": ";
     font-weight: 600;
     color: #94a3b8;
   }

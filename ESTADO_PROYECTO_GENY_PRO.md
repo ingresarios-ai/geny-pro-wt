@@ -32,6 +32,9 @@ Todas las tablas están creadas en producción con **Row Level Security (RLS)** 
   - **Opción A (Drag & Drop + Libros Pesados hasta 100 MB):** Subida directa firmada a Supabase Storage (`geny-knowledge-temp`) con progreso real (`0–100%`) + Gemini File API (`maxDuration = 300`) para PDFs grandes, Word `.docx` e imágenes.
   - **Opción B (URLs Web + Google Drive):** Soporta páginas web públicas, enlaces individuales de documentos y carpetas públicas completas de Google Drive (20+ documentos en cola individual) + botón `Re-leer`.
   - **Monitor Flotante en 2.º Plano:** Seguimiento en vivo (`En cola` → `Subiendo %` → `Analizando IA` → `Completado` / `Error`) visible aunque se cambie de pestaña en `/admin`, más botón **`Ver / Editar`**.
+- **Telemetría de Uso por Alumno y Estimador de Cobro API (Gemini vs. Claude):**
+  - Cálculo automático por mensaje (`src/lib/geny/pricing.ts`) según proveedor activo (`gemini` o `claude`), modalidad (`texto`, `audio`, `gráfico`), tokens de razonamiento/caché y costos de indexación RAG (`public.geny_rag_usage_logs` + RPC `public.get_geny_usage_analytics`).
+  - Panel financiero superior en `/admin`, columna individual `Consumo IA / Costo` en el directorio, ficha detallada en el modal **`Editar / Ficha`**, exportación CSV de consumo y tarifas USD/1M ajustables en **Motor IA, APIs & Tokens**.
 - **Bóveda de Llaves API + Zona de Peligro + Rollback 1-Clic:**
   - Modal de advertencia **`⚠️ Cuidado: Zona de Peligro`** al desbloquear la edición en la pestaña **Motor IA, APIs y Reglas**.
   - Edición en vivo de las 14 llaves y tokens (`GOOGLE_GENERATIVE_AI_API_KEY`, `ANTHROPIC_API_KEY`, `GROQ_API_KEY`, `OPENAI_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_APP_SECRET`, `RESEND_API_KEY`, `EMAIL_FROM`, `WHOP_WEBHOOK_SECRET`, `STRIPE_WEBHOOK_SECRET`, `HOTMART_HOTTOK`).

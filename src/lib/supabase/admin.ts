@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import type { AiPricingConfig } from "@/lib/geny/pricing";
 
 export type ChannelType = "telegram" | "whatsapp" | "web";
 export type MembershipStatus = "active" | "past_due" | "canceled" | "suspended";
@@ -37,6 +38,7 @@ export interface GenySettingsSnapshot {
   human_support_url: string;
   system_prompt_compliant: string;
   runtime_secrets: RuntimeSecretsMap;
+  pricing_overrides?: Partial<AiPricingConfig> | null;
   saved_at?: string;
 }
 
@@ -53,6 +55,7 @@ export interface GenySettings {
   human_support_url: string;
   system_prompt_compliant: string;
   runtime_secrets: RuntimeSecretsMap;
+  pricing_overrides?: Partial<AiPricingConfig> | null;
   previous_working_snapshot: GenySettingsSnapshot | null;
   last_snapshot_at: string | null;
   updated_at: string;
@@ -112,6 +115,9 @@ export interface GenyMessage {
   model_used: string;
   tokens_in: number;
   tokens_out: number;
+  thoughts_tokens?: number;
+  cached_tokens?: number;
+  estimated_cost_usd?: number;
   latency_ms: number | null;
   needs_human_review: boolean;
   review_reason: string | null;
@@ -120,6 +126,48 @@ export interface GenyMessage {
   is_gold_dataset: boolean;
   mentor_ideal_response: string | null;
   created_at: string;
+}
+
+export interface UserUsageRow {
+  user_id: string;
+  messages_today: number;
+  messages_month: number;
+  messages_total: number;
+  text_count: number;
+  audio_count: number;
+  image_count: number;
+  tokens_in_total: number;
+  tokens_out_total: number;
+  cost_today_usd: number;
+  cost_month_usd: number;
+  cost_total_usd: number;
+  gemini_cost_usd: number;
+  claude_cost_usd: number;
+  last_interaction_at: string | null;
+}
+
+export interface UsageAnalyticsPayload {
+  summary: {
+    chat_cost_today_usd: number;
+    chat_cost_month_usd: number;
+    chat_cost_total_usd: number;
+    rag_cost_today_usd: number;
+    rag_cost_month_usd: number;
+    rag_cost_total_usd: number;
+    total_cost_today_usd: number;
+    total_cost_month_usd: number;
+    total_cost_all_time_usd: number;
+    gemini_month_usd: number;
+    claude_month_usd: number;
+    gemini_total_usd: number;
+    claude_total_usd: number;
+    messages_today: number;
+    messages_month: number;
+    messages_total: number;
+    tokens_month: number;
+    tokens_total: number;
+  };
+  per_user: UserUsageRow[];
 }
 
 export function isSupabaseAdminConfigured(): boolean {

@@ -9,6 +9,7 @@ import {
 } from "@/lib/supabase/admin";
 import { evaluateGuardrails } from "@/lib/geny/guardrails";
 import { searchKnowledgeContext } from "@/lib/geny/rag";
+import { calculateMessageCostUsd } from "@/lib/geny/pricing";
 
 export interface BrainInput {
   user: GenyUser;
@@ -257,11 +258,15 @@ export async function runGenyBrain(input: BrainInput): Promise<BrainOutput> {
           maxTokens: 4096,
           temperature: 0.45,
           maxRetries: 0,
-          providerOptions: {
-            google: {
-              thinkingConfig: { thinkingBudget: 256 },
-            },
-          },
+          ...(candidate !== "gemini-3.5-flash-lite"
+            ? {
+                providerOptions: {
+                  google: {
+                    thinkingConfig: { thinkingBudget: 256 },
+                  },
+                },
+              }
+            : {}),
         });
         lastErr = null;
         break;
@@ -283,7 +288,42 @@ export async function runGenyBrain(input: BrainInput): Promise<BrainOutput> {
   const replyText = aiResult.text.trim();
   const latencyMs = Date.now() - startedAt;
 
-  // 5. Guardar mensaje + métricas + banderas de auditoría semanal + actualizar last_seen_at
+  const tokensIn = aiResult.usage?.promptTokens ?? 0;
+  const tokensOut = aiResult.usage?.completionTokens ?? 0;
+
+  const googleUsage = (
+    aiResult.providerMetadata?.google as
+      | { usageMetadata?: { thoughtsTokenCount?: number } }
+      | undefined
+  )?.usageMetadata;
+  const anthropicMeta = aiResult.providerMetadata?.anthropic as
+    | {
+        cacheReadInputTokens?: number;
+        cacheCreationInputTokens?: number;
+      }
+    | undefined;
+
+  const thoughtsTokens =
+    provider === "gemini"
+      ? (googleUsage?.thoughtsTokenCount ??
+        (modelId.includes("lite") ? 0 : 256))
+      : 0;
+  const cachedInputTokens = anthropicMeta?.cacheReadInputTokens ?? 0;
+  const cacheWriteTokens = anthropicMeta?.cacheCreationInputTokens ?? 0;
+
+  const estimatedCostUsd = calculateMessageCostUsd({
+    provider,
+    modelId,
+    inputType,
+    tokensIn,
+    tokensOut,
+    thoughtsTokens,
+    cachedInputTokens,
+    cacheWriteTokens,
+    pricingOverrides: settings.pricing_overrides,
+  });
+
+  // 5. Guardar mensaje + métricas + costo estimado USD + banderas de auditoría semanal + actualizar last_seen_at
   await Promise.all([
     supabase.from("geny_messages").insert({
       user_id: user.id,
@@ -293,8 +333,11 @@ export async function runGenyBrain(input: BrainInput): Promise<BrainOutput> {
       assistant_response: replyText,
       provider_used: provider,
       model_used: modelId,
-      tokens_in: aiResult.usage?.promptTokens ?? 0,
-      tokens_out: aiResult.usage?.completionTokens ?? 0,
+      tokens_in: tokensIn,
+      tokens_out: tokensOut,
+      thoughts_tokens: thoughtsTokens,
+      cached_tokens: cachedInputTokens,
+      estimated_cost_usd: estimatedCostUsd,
       latency_ms: latencyMs,
       needs_human_review: guardrail.needsHumanReview,
       review_reason: guardrail.reviewReason,

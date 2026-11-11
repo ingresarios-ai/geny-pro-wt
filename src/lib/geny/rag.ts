@@ -1,6 +1,45 @@
 import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { estimateRagExtractionCostUsd } from "@/lib/geny/pricing";
+
+export async function logRagUsageEvent(params: {
+  operationType: string;
+  modelUsed: string;
+  label: string;
+  llmTokensIn?: number;
+  llmTokensOut?: number;
+  embeddingChars?: number;
+}): Promise<void> {
+  try {
+    const supabase = getSupabaseAdmin();
+    const llmIn = Math.max(0, Math.round(params.llmTokensIn ?? 0));
+    const llmOut = Math.max(0, Math.round(params.llmTokensOut ?? 0));
+    const embedChars = Math.max(0, params.embeddingChars ?? 0);
+    const approxEmbedTokens = Math.ceil(embedChars / 4);
+
+    const costUsd = estimateRagExtractionCostUsd({
+      tokensIn: llmIn,
+      tokensOut: llmOut,
+      embeddingChars: embedChars,
+    });
+
+    if (costUsd <= 0 && llmIn <= 0 && approxEmbedTokens <= 0) {
+      return;
+    }
+
+    await supabase.from("geny_rag_usage_logs").insert({
+      operation_type: params.operationType,
+      model_used: params.modelUsed,
+      label: params.label.slice(0, 200),
+      tokens_in: llmIn + approxEmbedTokens,
+      tokens_out: llmOut,
+      estimated_cost_usd: costUsd,
+    });
+  } catch {
+    // No bloquear ingesta si falla el registro estadístico
+  }
+}
 
 const BASE_CATEGORIES = [
   "pedem",
@@ -95,13 +134,17 @@ ${headSample}${midSample}`;
         prompt,
         maxTokens: 256,
         temperature: 0,
-        providerOptions: {
-          google: {
-            thinkingConfig: {
-              thinkingBudget: 0,
-            },
-          },
-        },
+        ...(modelId !== "gemini-3.5-flash-lite"
+          ? {
+              providerOptions: {
+                google: {
+                  thinkingConfig: {
+                    thinkingBudget: 0,
+                  },
+                },
+              },
+            }
+          : {}),
       });
       const firstToken = res.text.trim().split(/[\s\r\n,.;:]+/)[0] || "";
       const slug = sanitizeCategorySlug(firstToken);
@@ -301,6 +344,13 @@ export async function indexKnowledgeDocument(params: {
       updated_at: new Date().toISOString(),
     })
     .eq("id", params.documentId);
+
+  await logRagUsageEvent({
+    operationType: "rag_embed_768d",
+    modelUsed: "gemini-embedding-001",
+    label: params.title,
+    embeddingChars: params.rawContent.length,
+  });
 
   return { chunksIndexed: rows.length };
 }

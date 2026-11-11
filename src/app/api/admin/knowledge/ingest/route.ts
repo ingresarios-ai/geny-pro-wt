@@ -10,6 +10,7 @@ import {
 } from "@/lib/supabase/admin";
 import {
   indexKnowledgeDocument,
+  logRagUsageEvent,
   resolveOrAutoClassifyCategory,
 } from "@/lib/geny/rag";
 
@@ -205,6 +206,13 @@ async function extractPdfRangeWithGeminiVision(params: {
 
       const extracted = result.text.trim();
       if (extracted) {
+        await logRagUsageEvent({
+          operationType: "rag_pdf_range_extract",
+          modelUsed: modelId,
+          label: `${params.fileName} (${params.partIndex}/${params.totalParts})`,
+          llmTokensIn: result.usage?.promptTokens ?? 0,
+          llmTokensOut: result.usage?.completionTokens ?? 0,
+        });
         return extracted;
       }
     } catch (err) {
@@ -322,6 +330,13 @@ async function extractWithGeminiVision(params: {
 
         const extracted = result.text.trim();
         if (extracted) {
+          await logRagUsageEvent({
+            operationType: "rag_multimodal_extract",
+            modelUsed: modelId,
+            label: params.fileName,
+            llmTokensIn: result.usage?.promptTokens ?? 0,
+            llmTokensOut: result.usage?.completionTokens ?? 0,
+          });
           return extracted;
         }
       } catch (err) {
@@ -780,6 +795,13 @@ ${params.rawText.slice(0, 75000)}`;
       });
       const text = result.text.trim();
       if (text.length >= 80) {
+        await logRagUsageEvent({
+          operationType: "rag_web_extract",
+          modelUsed: modelId,
+          label: params.pageTitle || params.url,
+          llmTokensIn: result.usage?.promptTokens ?? 0,
+          llmTokensOut: result.usage?.completionTokens ?? 0,
+        });
         return text;
       }
     } catch (err) {

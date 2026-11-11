@@ -38,8 +38,13 @@ import {
   RotateCcw,
   Globe,
   ExternalLink,
+  DollarSign,
   X,
 } from "lucide-react";
+import {
+  DEFAULT_AI_PRICING,
+  type AiPricingConfig,
+} from "@/lib/geny/pricing";
 import type {
   BillingSource,
   GenyDeviceHistory,
@@ -49,6 +54,8 @@ import type {
   ManagedSecretKey,
   MembershipStatus,
   PlanTier,
+  UsageAnalyticsPayload,
+  UserUsageRow,
 } from "@/lib/supabase/admin";
 
 interface KnowledgeDocSummary {
@@ -129,6 +136,8 @@ interface DashboardPayload {
   deviceHistory: GenyDeviceHistory[];
   knowledgeDocs: KnowledgeDocSummary[];
   reviewMessages: ReviewMessageRow[];
+  usageAnalytics?: UsageAnalyticsPayload;
+  resolvedPricing?: AiPricingConfig;
   stats: {
     totalUsers: number;
     activeUsers: number;
@@ -193,6 +202,20 @@ function getDaysUntilExpiration(expiresAt?: string | null): number | null {
   return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
 }
 
+function formatUsd(amount?: number | null): string {
+  const val = Number(amount ?? 0);
+  if (!Number.isFinite(val) || val <= 0) return "$0.00";
+  if (val < 1) return `$${val.toFixed(4)}`;
+  return `$${val.toFixed(2)}`;
+}
+
+function formatTokensCompact(tokens?: number | null): string {
+  const val = Math.max(0, Math.round(Number(tokens ?? 0)));
+  if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(2)}M`;
+  if (val >= 1_000) return `${(val / 1_000).toFixed(1)}k`;
+  return String(val);
+}
+
 export default function AdminDashboardClient() {
   const router = useRouter();
   const uid = useId();
@@ -235,7 +258,7 @@ export default function AdminDashboardClient() {
     "all"
   );
   const [sortBy, setSortBy] = useState<
-    "created_desc" | "expires_asc" | "name_asc"
+    "created_desc" | "expires_asc" | "name_asc" | "cost_desc" | "messages_desc"
   >("created_desc");
 
   // Native <dialog> refs (modern-web-guidance: dialog)
@@ -290,6 +313,8 @@ export default function AdminDashboardClient() {
 
   // Settings editables + Bóveda de APIs (Zona de Peligro)
   const [settingsForm, setSettingsForm] = useState<GenySettings | null>(null);
+  const [pricingDraft, setPricingDraft] =
+    useState<AiPricingConfig>(DEFAULT_AI_PRICING);
   const [savingSettings, setSavingSettings] = useState(false);
   const [dangerZoneUnlocked, setDangerZoneUnlocked] = useState(false);
   const [secretsDraft, setSecretsDraft] = useState<
@@ -320,6 +345,9 @@ export default function AdminDashboardClient() {
           setSettingsForm((prev) =>
             opts?.silent && prev ? prev : json.settings
           );
+        }
+        if (json.resolvedPricing && !opts?.silent) {
+          setPricingDraft(json.resolvedPricing);
         }
         if (chRes.ok) {
           const chJson = (await chRes.json()) as ChannelsPayload;
@@ -406,6 +434,14 @@ export default function AdminDashboardClient() {
     setSortBy("created_desc");
   }
 
+  const usageByUserMap = useMemo(() => {
+    const map = new Map<string, UserUsageRow>();
+    for (const row of data?.usageAnalytics?.per_user || []) {
+      map.set(row.user_id, row);
+    }
+    return map;
+  }, [data]);
+
   const filteredUsers = useMemo(() => {
     if (!data) return [];
     const q = searchQuery.trim().toLowerCase();
@@ -469,6 +505,19 @@ export default function AdminDashboardClient() {
     });
 
     return [...list].sort((a, b) => {
+      if (sortBy === "cost_desc") {
+        const aCost = usageByUserMap.get(a.id)?.cost_total_usd ?? 0;
+        const bCost = usageByUserMap.get(b.id)?.cost_total_usd ?? 0;
+        if (bCost !== aCost) return bCost - aCost;
+        const aMsgs = usageByUserMap.get(a.id)?.messages_total ?? 0;
+        const bMsgs = usageByUserMap.get(b.id)?.messages_total ?? 0;
+        return bMsgs - aMsgs;
+      }
+      if (sortBy === "messages_desc") {
+        const aMsgs = usageByUserMap.get(a.id)?.messages_total ?? 0;
+        const bMsgs = usageByUserMap.get(b.id)?.messages_total ?? 0;
+        if (bMsgs !== aMsgs) return bMsgs - aMsgs;
+      }
       if (sortBy === "expires_asc") {
         const aTime = a.expires_at
           ? new Date(a.expires_at).getTime()
@@ -489,6 +538,7 @@ export default function AdminDashboardClient() {
     });
   }, [
     data,
+    usageByUserMap,
     searchQuery,
     statusFilter,
     planFilter,
@@ -519,6 +569,14 @@ export default function AdminDashboardClient() {
       "WhatsApp",
       "Telegram_ID",
       "Telegram_Usuario",
+      "Mensajes_Hoy",
+      "Mensajes_Mes",
+      "Mensajes_Total",
+      "Notas_Voz",
+      "Graficos_Analizados",
+      "Tokens_Totales",
+      "Costo_Mes_USD",
+      "Costo_Total_USD",
       "Origen",
       "Notas_Admin",
       "Fecha_Alta",
@@ -526,6 +584,9 @@ export default function AdminDashboardClient() {
 
     const rows = filteredUsers.map((u) => {
       const daysLeft = getDaysUntilExpiration(u.expires_at);
+      const uUsage = usageByUserMap.get(u.id);
+      const totalTokens =
+        (uUsage?.tokens_in_total ?? 0) + (uUsage?.tokens_out_total ?? 0);
       return [
         escapeCsvCell(u.full_name || ""),
         escapeCsvCell(u.email),
@@ -542,6 +603,14 @@ export default function AdminDashboardClient() {
         escapeCsvCell(
           u.telegram_username ? `@${u.telegram_username}` : ""
         ),
+        escapeCsvCell(uUsage?.messages_today ?? 0),
+        escapeCsvCell(uUsage?.messages_month ?? 0),
+        escapeCsvCell(uUsage?.messages_total ?? 0),
+        escapeCsvCell(uUsage?.audio_count ?? 0),
+        escapeCsvCell(uUsage?.image_count ?? 0),
+        escapeCsvCell(totalTokens),
+        escapeCsvCell((uUsage?.cost_month_usd ?? 0).toFixed(4)),
+        escapeCsvCell((uUsage?.cost_total_usd ?? 0).toFixed(4)),
         escapeCsvCell(u.billing_source),
         escapeCsvCell(u.admin_notes || ""),
         escapeCsvCell(u.created_at.slice(0, 10)),
@@ -569,6 +638,11 @@ export default function AdminDashboardClient() {
     if (!data || !selectedUser) return [];
     return data.deviceHistory.filter((h) => h.user_id === selectedUser.id);
   }, [data, selectedUser]);
+
+  const selectedUserUsage = useMemo(() => {
+    if (!selectedUser) return null;
+    return usageByUserMap.get(selectedUser.id) ?? null;
+  }, [selectedUser, usageByUserMap]);
 
   function openManageUserDialog(u: GenyUser) {
     setSelectedUser(u);
@@ -1448,6 +1522,7 @@ export default function AdminDashboardClient() {
           human_support_url: settingsForm.human_support_url,
           system_prompt_compliant: settingsForm.system_prompt_compliant,
           runtime_secrets_updates: secretsDraft,
+          pricing_overrides: pricingDraft,
         }),
       });
       if (res.ok) {
@@ -1781,6 +1856,198 @@ export default function AdminDashboardClient() {
                 </p>
               </div>
             </section>
+
+            {/* Panel Financiero de Consumo IA y Estimación de Facturación API (Gemini vs Claude) */}
+            {data.usageAnalytics && (
+              <section
+                aria-label="Estimación de consumo y cobro API de inteligencia artificial"
+                className="glass-panel mb-8 rounded-3xl border border-emerald-500/20 p-5 sm:p-6"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-500/35 bg-emerald-500/15 text-emerald-300">
+                      <DollarSign className="h-4 w-4" aria-hidden="true" />
+                    </div>
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h2 className="text-sm font-extrabold tracking-tight text-white sm:text-base">
+                          Estimador de Consumo y Facturación API · GENY PRO
+                        </h2>
+                        <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase text-emerald-300">
+                          Motor Activo:{" "}
+                          {data.settings?.active_provider === "claude"
+                            ? `Claude (${data.settings.claude_model})`
+                            : `Gemini (${data.settings?.gemini_model || "gemini-3.8-flash"})`}
+                        </span>
+                      </div>
+                      <p className="mt-0.5 text-xs text-slate-400">
+                        Cálculo automático en tiempo real según tokens de
+                        entrada/salida, notas de voz, gráficos y vectorización
+                        RAG del motor que respondió cada mensaje.
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTab("settings");
+                      if (!dangerZoneUnlocked) {
+                        setTimeout(
+                          () => dangerDialogRef.current?.showModal(),
+                          20
+                        );
+                      }
+                    }}
+                    className="inline-flex min-h-9 cursor-pointer items-center gap-1.5 rounded-xl border border-white/12 bg-white/[0.04] px-3 py-1.5 font-mono text-[11px] font-semibold text-slate-200 transition-colors hover:border-violet-400/40 hover:bg-violet-500/15 hover:text-white"
+                  >
+                    <Settings
+                      className="h-3.5 w-3.5 text-violet-300"
+                      aria-hidden="true"
+                    />
+                    <span>Ajustar Tarifas USD/1M</span>
+                  </button>
+                </div>
+
+                <div className="mt-4 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
+                  {/* Tarjeta 1: Gasto Estimado Mes Actual */}
+                  <div className="rounded-2xl border border-emerald-500/25 bg-[#07090F]/90 p-4">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-300">
+                      Cobro Estimado Mes Actual (USD)
+                    </p>
+                    <p className="mt-2 font-mono text-2xl font-extrabold tabular-nums text-white">
+                      {formatUsd(
+                        data.usageAnalytics.summary.total_cost_month_usd
+                      )}
+                    </p>
+                    <div className="mt-2 flex flex-col gap-0.5 font-mono text-[11px] tabular-nums text-slate-400">
+                      <span>
+                        Chat Alumnos:{" "}
+                        <strong className="text-slate-200">
+                          {formatUsd(
+                            data.usageAnalytics.summary.chat_cost_month_usd
+                          )}
+                        </strong>{" "}
+                        ({data.usageAnalytics.summary.messages_month} msgs)
+                      </span>
+                      <span>
+                        Libros / RAG:{" "}
+                        <strong className="text-slate-200">
+                          {formatUsd(
+                            data.usageAnalytics.summary.rag_cost_month_usd
+                          )}
+                        </strong>
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Tarjeta 2: Hoy + Histórico */}
+                  <div className="rounded-2xl border border-white/10 bg-[#07090F]/90 p-4">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                      Consumo Hoy y Acumulado Total
+                    </p>
+                    <p className="mt-2 font-mono text-2xl font-extrabold tabular-nums text-sky-300">
+                      {formatUsd(
+                        data.usageAnalytics.summary.total_cost_today_usd
+                      )}
+                      <span className="ml-1.5 text-xs font-normal text-slate-400">
+                        hoy
+                      </span>
+                    </p>
+                    <div className="mt-2 flex flex-col gap-0.5 font-mono text-[11px] tabular-nums text-slate-400">
+                      <span>
+                        Histórico total:{" "}
+                        <strong className="text-white">
+                          {formatUsd(
+                            data.usageAnalytics.summary.total_cost_all_time_usd
+                          )}
+                        </strong>
+                      </span>
+                      <span>
+                        Volumen:{" "}
+                        {formatTokensCompact(
+                          data.usageAnalytics.summary.tokens_total
+                        )}{" "}
+                        tokens ({data.usageAnalytics.summary.messages_total}{" "}
+                        msgs)
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Tarjeta 3: Desglose Google Gemini vs Anthropic Claude */}
+                  <div className="rounded-2xl border border-white/10 bg-[#07090F]/90 p-4">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                      Desglose por Proveedor API (Mes)
+                    </p>
+                    <div className="mt-2.5 space-y-2 font-mono text-xs tabular-nums">
+                      <div className="flex items-center justify-between rounded-lg border border-sky-500/20 bg-sky-500/[0.06] px-2.5 py-1.5">
+                        <span className="font-semibold text-sky-200">
+                          Google Gemini
+                        </span>
+                        <span className="font-bold text-white">
+                          {formatUsd(
+                            data.usageAnalytics.summary.gemini_month_usd +
+                              data.usageAnalytics.summary.rag_cost_month_usd
+                          )}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between rounded-lg border border-violet-500/20 bg-violet-500/[0.06] px-2.5 py-1.5">
+                        <span className="font-semibold text-violet-200">
+                          Anthropic Claude
+                        </span>
+                        <span className="font-bold text-white">
+                          {formatUsd(
+                            data.usageAnalytics.summary.claude_month_usd
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Tarjeta 4: Costo Promedio por Alumno y Tarifas */}
+                  <div className="rounded-2xl border border-white/10 bg-[#07090F]/90 p-4">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                      Promedio Mensual / Alumno Activo
+                    </p>
+                    <p className="mt-2 font-mono text-2xl font-extrabold tabular-nums text-violet-300">
+                      {formatUsd(
+                        data.usageAnalytics.summary.chat_cost_month_usd /
+                          Math.max(1, data.stats.activeUsers)
+                      )}
+                      <span className="ml-1.5 text-xs font-normal text-slate-400">
+                        / mes
+                      </span>
+                    </p>
+                    <div className="mt-2 flex flex-col gap-0.5 font-mono text-[10px] tabular-nums text-slate-400">
+                      <span>
+                        Gemini: $
+                        {(
+                          data.resolvedPricing?.gemini_input_per_1m ?? 0.3
+                        ).toFixed(2)}{" "}
+                        in · $
+                        {(
+                          data.resolvedPricing?.gemini_output_per_1m ?? 2.5
+                        ).toFixed(2)}{" "}
+                        out / 1M
+                      </span>
+                      <span>
+                        Claude: $
+                        {(
+                          data.resolvedPricing?.claude_sonnet_input_per_1m ??
+                          3.0
+                        ).toFixed(2)}{" "}
+                        in · $
+                        {(
+                          data.resolvedPricing?.claude_sonnet_output_per_1m ??
+                          15.0
+                        ).toFixed(2)}{" "}
+                        out / 1M
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            )}
           </>
         )}
 
@@ -1942,6 +2209,19 @@ export default function AdminDashboardClient() {
                     }`}
                   >
                     Vencidos
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSortBy("cost_desc");
+                    }}
+                    className={`cursor-pointer rounded-lg border px-2.5 py-1 text-xs font-semibold transition-colors ${
+                      sortBy === "cost_desc"
+                        ? "border-emerald-400/50 bg-emerald-500/20 text-emerald-200"
+                        : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.08]"
+                    }`}
+                  >
+                    Mayor Consumo IA
                   </button>
                   {hasActiveUserFilters && (
                     <button
@@ -2107,6 +2387,12 @@ export default function AdminDashboardClient() {
                     className="min-h-11 w-full rounded-xl border border-white/10 bg-[#07090F] px-3 text-xs text-white"
                   >
                     <option value="all|created_desc">Todos (Más recientes)</option>
+                    <option value="all|cost_desc">
+                      Todos (Mayor consumo / costo IA)
+                    </option>
+                    <option value="all|messages_desc">
+                      Todos (Más mensajes enviados)
+                    </option>
                     <option value="all|expires_asc">Todos (Vencen primero)</option>
                     <option value="all|name_asc">Todos (Orden A-Z)</option>
                     <option value="with_whatsapp|expires_asc">
@@ -2185,6 +2471,7 @@ export default function AdminDashboardClient() {
                     <th className="px-4 py-4">Plan / Origen</th>
                     <th className="px-4 py-4">Estado</th>
                     <th className="px-4 py-4">Dispositivos (Candado 90d)</th>
+                    <th className="px-4 py-4">Consumo IA / Costo</th>
                     <th className="px-4 py-4">Vencimiento</th>
                     <th className="px-5 py-4">Acciones</th>
                   </tr>
@@ -2193,7 +2480,7 @@ export default function AdminDashboardClient() {
                   {filteredUsers.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={6}
+                        colSpan={7}
                         className="px-5 py-12 text-center text-slate-400"
                       >
                         No hay usuarios que coincidan con el filtro actual.
@@ -2202,6 +2489,14 @@ export default function AdminDashboardClient() {
                   ) : (
                     filteredUsers.map((u) => {
                       const badge = STATUS_BADGE[u.membership_status];
+                      const uUsage = usageByUserMap.get(u.id);
+                      const dailyLimit =
+                        u.daily_message_override ??
+                        data?.settings?.daily_message_limit ??
+                        40;
+                      const totalTokens =
+                        (uUsage?.tokens_in_total ?? 0) +
+                        (uUsage?.tokens_out_total ?? 0);
                       return (
                         <tr
                           key={u.id}
@@ -2278,6 +2573,38 @@ export default function AdminDashboardClient() {
                                 </span>
                               </span>
                             </div>
+                          </td>
+                          <td className="px-4 py-4 font-mono text-xs tabular-nums">
+                            {uUsage && uUsage.messages_total > 0 ? (
+                              <div className="flex flex-col gap-1">
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                  <span className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 font-bold text-emerald-300">
+                                    {formatUsd(uUsage.cost_month_usd)} mes
+                                  </span>
+                                  <span className="text-[11px] text-slate-400">
+                                    ({formatUsd(uUsage.cost_total_usd)} tot)
+                                  </span>
+                                </div>
+                                <span className="text-[11px] text-slate-200">
+                                  Hoy:{" "}
+                                  <strong className="text-white">
+                                    {uUsage.messages_today}
+                                  </strong>
+                                  /{dailyLimit} · Mes: {uUsage.messages_month} ·
+                                  Tot: {uUsage.messages_total}
+                                </span>
+                                <span className="text-[10px] text-slate-400">
+                                  Txt {uUsage.text_count} · Voz{" "}
+                                  {uUsage.audio_count} · Img{" "}
+                                  {uUsage.image_count} ·{" "}
+                                  {formatTokensCompact(totalTokens)} tok
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-slate-500">
+                                Sin uso registrado ($0.00)
+                              </span>
+                            )}
                           </td>
                           <td className="px-4 py-4 font-mono text-xs tabular-nums text-slate-300">
                             {u.expires_at ? (
@@ -2982,6 +3309,13 @@ export default function AdminDashboardClient() {
                           {m.channel}
                         </strong>{" "}
                         · Modelo: {m.model_used}
+                        {(m.tokens_in > 0 || m.tokens_out > 0) && (
+                          <span className="text-emerald-300">
+                            {" "}
+                            · {formatTokensCompact(m.tokens_in + m.tokens_out)}{" "}
+                            tok ({formatUsd(m.estimated_cost_usd)})
+                          </span>
+                        )}
                       </span>
                       <div className="flex items-center gap-2">
                         {m.review_reason && (
@@ -3936,6 +4270,114 @@ export default function AdminDashboardClient() {
               />
             </div>
 
+            {/* Tarifas Editables USD por 1M de Tokens para Estimación Financiera */}
+            <div className="rounded-2xl border border-emerald-500/25 bg-[#07090F]/90 p-5">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
+                <div>
+                  <h4 className="text-sm font-bold text-white">
+                    Tarifas de Referencia API para Estimación de Costos (USD /
+                    1M Tokens)
+                  </h4>
+                  <p className="mt-0.5 text-xs text-slate-400">
+                    Ajusta estos valores si Google Cloud o Anthropic actualizan
+                    sus precios oficiales. Se usan para calcular el costo de
+                    cada interacción en tiempo real.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPricingDraft({ ...DEFAULT_AI_PRICING })}
+                  className="cursor-pointer rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 font-mono text-[11px] font-semibold text-slate-300 hover:bg-white/10 hover:text-white"
+                >
+                  Restablecer tarifas oficiales
+                </button>
+              </div>
+
+              <div className="mt-4 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-5">
+                {(
+                  [
+                    {
+                      key: "gemini_input_per_1m",
+                      label: "Gemini Entrada / 1M",
+                      step: "0.01",
+                    },
+                    {
+                      key: "gemini_audio_input_per_1m",
+                      label: "Gemini Audio / 1M",
+                      step: "0.01",
+                    },
+                    {
+                      key: "gemini_output_per_1m",
+                      label: "Gemini Salida / 1M",
+                      step: "0.05",
+                    },
+                    {
+                      key: "gemini_embedding_per_1m",
+                      label: "Embedding 768d / 1M",
+                      step: "0.01",
+                    },
+                    {
+                      key: "whisper_note_flat_usd",
+                      label: "Nota Voz Whisper (USD)",
+                      step: "0.0005",
+                    },
+                    {
+                      key: "claude_sonnet_input_per_1m",
+                      label: "Claude Sonnet In / 1M",
+                      step: "0.10",
+                    },
+                    {
+                      key: "claude_sonnet_cached_per_1m",
+                      label: "Claude Caché (-90%) / 1M",
+                      step: "0.05",
+                    },
+                    {
+                      key: "claude_sonnet_output_per_1m",
+                      label: "Claude Sonnet Out / 1M",
+                      step: "0.50",
+                    },
+                    {
+                      key: "claude_haiku_input_per_1m",
+                      label: "Claude Haiku In / 1M",
+                      step: "0.05",
+                    },
+                    {
+                      key: "claude_haiku_output_per_1m",
+                      label: "Claude Haiku Out / 1M",
+                      step: "0.10",
+                    },
+                  ] as Array<{
+                    key: keyof AiPricingConfig;
+                    label: string;
+                    step: string;
+                  }>
+                ).map((field) => (
+                  <div key={field.key}>
+                    <label
+                      htmlFor={`${uid}-price-${field.key}`}
+                      className="mb-1 block text-[11px] font-semibold text-slate-300"
+                    >
+                      {field.label}
+                    </label>
+                    <input
+                      id={`${uid}-price-${field.key}`}
+                      type="number"
+                      min={0}
+                      step={field.step}
+                      value={pricingDraft[field.key]}
+                      onChange={(e) =>
+                        setPricingDraft((prev) => ({
+                          ...prev,
+                          [field.key]: Number(e.target.value),
+                        }))
+                      }
+                      className="min-h-10 w-full rounded-xl border border-white/10 bg-[#0B0E17] px-3 font-mono text-xs tabular-nums text-emerald-300"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <div className="flex flex-wrap items-center justify-between gap-4">
               <button
                 type="submit"
@@ -4563,6 +5005,69 @@ export default function AdminDashboardClient() {
                     onChange={(e) => setEditNotes(e.target.value)}
                     className="min-h-11 w-full rounded-xl border border-white/10 bg-[#07090F] px-3 text-sm text-white"
                   />
+                </div>
+              </div>
+
+              {/* Telemetría Individual de Consumo IA y Costo API del Alumno */}
+              <div className="rounded-2xl border border-emerald-500/25 bg-[#07090F] p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-emerald-300">
+                    <DollarSign className="h-4 w-4" aria-hidden="true" />
+                    <span>
+                      Consumo IA y Costo Estimado del Alumno (GENY PRO)
+                    </span>
+                  </p>
+                  <span className="font-mono text-[11px] tabular-nums text-slate-400">
+                    Última consulta:{" "}
+                    {selectedUserUsage?.last_interaction_at
+                      ? new Date(
+                          selectedUserUsage.last_interaction_at
+                        ).toLocaleString("es-CO")
+                      : "Sin mensajes aún"}
+                  </span>
+                </div>
+
+                <div className="mt-3 grid gap-2.5 sm:grid-cols-4 font-mono text-xs tabular-nums">
+                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-2.5">
+                    <p className="text-[10px] uppercase text-slate-400">
+                      Costo Mes / Total
+                    </p>
+                    <p className="mt-1 font-bold text-emerald-300">
+                      {formatUsd(selectedUserUsage?.cost_month_usd)}
+                      <span className="ml-1 font-normal text-slate-400">
+                        / {formatUsd(selectedUserUsage?.cost_total_usd)}
+                      </span>
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-2.5">
+                    <p className="text-[10px] uppercase text-slate-400">
+                      Mensajes (Hoy / Mes / Tot)
+                    </p>
+                    <p className="mt-1 font-bold text-white">
+                      {selectedUserUsage?.messages_today ?? 0} /{" "}
+                      {selectedUserUsage?.messages_month ?? 0} /{" "}
+                      {selectedUserUsage?.messages_total ?? 0}
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-2.5">
+                    <p className="text-[10px] uppercase text-slate-400">
+                      Modalidades Usadas
+                    </p>
+                    <p className="mt-1 text-slate-200">
+                      Txt {selectedUserUsage?.text_count ?? 0} · Voz{" "}
+                      {selectedUserUsage?.audio_count ?? 0} · Img{" "}
+                      {selectedUserUsage?.image_count ?? 0}
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-2.5">
+                    <p className="text-[10px] uppercase text-slate-400">
+                      Gemini vs Claude
+                    </p>
+                    <p className="mt-1 text-slate-200">
+                      G: {formatUsd(selectedUserUsage?.gemini_cost_usd)} · C:{" "}
+                      {formatUsd(selectedUserUsage?.claude_cost_usd)}
+                    </p>
+                  </div>
                 </div>
               </div>
 

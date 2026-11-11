@@ -1,11 +1,37 @@
 import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth/admin-session";
+import { DEFAULT_AI_PRICING, resolveAiPricing } from "@/lib/geny/pricing";
 import {
+  UsageAnalyticsPayload,
   getEffectiveSecretsMap,
   getGenySettings,
   getSupabaseAdmin,
   isSupabaseAdminConfigured,
 } from "@/lib/supabase/admin";
+
+const EMPTY_USAGE_ANALYTICS: UsageAnalyticsPayload = {
+  summary: {
+    chat_cost_today_usd: 0,
+    chat_cost_month_usd: 0,
+    chat_cost_total_usd: 0,
+    rag_cost_today_usd: 0,
+    rag_cost_month_usd: 0,
+    rag_cost_total_usd: 0,
+    total_cost_today_usd: 0,
+    total_cost_month_usd: 0,
+    total_cost_all_time_usd: 0,
+    gemini_month_usd: 0,
+    claude_month_usd: 0,
+    gemini_total_usd: 0,
+    claude_total_usd: 0,
+    messages_today: 0,
+    messages_month: 0,
+    messages_total: 0,
+    tokens_month: 0,
+    tokens_total: 0,
+  },
+  per_user: [],
+};
 
 export async function GET() {
   if (!(await isAdminAuthenticated())) {
@@ -38,6 +64,8 @@ export async function GET() {
       knowledgeDocs: [],
       reviewMessages: [],
       settings: null,
+      usageAnalytics: EMPTY_USAGE_ANALYTICS,
+      resolvedPricing: DEFAULT_AI_PRICING,
       stats: {
         totalUsers: 0,
         activeUsers: 0,
@@ -50,8 +78,12 @@ export async function GET() {
   }
 
   const supabase = getSupabaseAdmin();
+  const now = new Date();
   const startOfDayIso = new Date(
-    new Date().setUTCHours(0, 0, 0, 0)
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+  ).toISOString();
+  const startOfMonthIso = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)
   ).toISOString();
 
   const [
@@ -62,6 +94,7 @@ export async function GET() {
     reviewsRes,
     msgTodayRes,
     goldCountRes,
+    usageRpcRes,
   ] = await Promise.all([
     getGenySettings(),
     supabase
@@ -93,6 +126,10 @@ export async function GET() {
       .from("geny_messages")
       .select("id", { count: "exact", head: true })
       .eq("is_gold_dataset", true),
+    supabase.rpc("get_geny_usage_analytics", {
+      p_start_of_day: startOfDayIso,
+      p_start_of_month: startOfMonthIso,
+    }),
   ]);
 
   const secretsMeta = getEffectiveSecretsMap(settings.runtime_secrets);
@@ -119,6 +156,16 @@ export async function GET() {
     (m) => m.needs_human_review && !m.reviewed_at
   ).length;
 
+  const rawUsage = usageRpcRes.data as UsageAnalyticsPayload | null;
+  const usageAnalytics: UsageAnalyticsPayload =
+    rawUsage && rawUsage.summary
+      ? {
+          summary: rawUsage.summary,
+          per_user: Array.isArray(rawUsage.per_user) ? rawUsage.per_user : [],
+        }
+      : EMPTY_USAGE_ANALYTICS;
+  const resolvedPricing = resolveAiPricing(settings.pricing_overrides);
+
   return NextResponse.json({
     configured: true,
     envStatus,
@@ -128,6 +175,8 @@ export async function GET() {
     deviceHistory: historyRes.data || [],
     knowledgeDocs: docsRes.data || [],
     reviewMessages: reviewsRes.data || [],
+    usageAnalytics,
+    resolvedPricing,
     stats: {
       totalUsers: users.length,
       activeUsers,
