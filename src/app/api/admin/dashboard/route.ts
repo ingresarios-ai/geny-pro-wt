@@ -77,6 +77,7 @@ export async function GET() {
     supabase
       .from("geny_knowledge_documents")
       .select("id, title, category, source_url, is_active, chunks_count, updated_at")
+      .eq("is_active", true)
       .order("updated_at", { ascending: false }),
     supabase
       .from("geny_messages")

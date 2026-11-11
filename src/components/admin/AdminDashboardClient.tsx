@@ -65,6 +65,7 @@ interface IngestJobItem {
   name: string;
   stage: "queued" | "uploading" | "analyzing" | "done" | "error";
   uploadPercent?: number;
+  analyzePercent?: number;
   detailText: string;
   categoryAssigned?: string;
   isNewCategory?: boolean;
@@ -928,17 +929,15 @@ export default function AdminDashboardClient() {
           updateIngestJob(jobId, {
             stage: "analyzing",
             uploadPercent: 100,
-            detailText:
-              finalCategory === "__auto__"
-                ? "Analizando texto + imágenes con Gemini 3.8, eligiendo categoría automática y vectorizando (768d)..."
-                : "Analizando texto + imágenes con Gemini 3.8 Multimodal y vectorizando (768d)...",
+            analyzePercent: undefined,
+            detailText: "Preparando lectura multimodal con Gemini 3.8...",
           });
 
-          const procRes = await fetch("/api/admin/knowledge/ingest", {
+          const prepRes = await fetch("/api/admin/knowledge/ingest", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              action: "ingest_storage_file",
+              action: "prepare_storage_file",
               storagePath: signJson.storagePath,
               fileName: file.name,
               mimeType: file.type || "application/pdf",
@@ -947,33 +946,156 @@ export default function AdminDashboardClient() {
             }),
           });
 
-          const procJson = await safeParseJson<{
+          const prepJson = await safeParseJson<{
             ok?: boolean;
+            mode?: "completed" | "chunked_pdf";
+            draftDocumentId?: string;
+            geminiFileName?: string;
+            geminiFileUri?: string;
+            totalPages?: number;
+            ranges?: Array<{
+              partIndex: number;
+              totalParts: number;
+              startPage?: number;
+              endPage?: number;
+              label: string;
+            }>;
             category?: string;
             autoClassified?: boolean;
             isNewCategory?: boolean;
             chunksIndexed?: number;
-          }>(procRes);
+          }>(prepRes);
 
-          if (!procRes.ok || !procJson.ok) {
+          if (!prepRes.ok || !prepJson.ok) {
             throw new Error(
-              procJson.error || "Error durante la extracción multimodal."
+              prepJson.error || "Error durante la preparación del archivo."
             );
           }
 
-          const assignedCat = (procJson.category || "general").toUpperCase();
-          const chunks = procJson.chunksIndexed ?? 0;
+          let finalAssignedCat = (prepJson.category || "general").toUpperCase();
+          let finalIsNewCat = Boolean(prepJson.isNewCategory);
+          let finalChunks = prepJson.chunksIndexed ?? 0;
+
+          // Si es un libro/PDF mediano o extenso, procesar por bloques de 15 páginas (0 riesgo de timeout 504)
+          if (
+            prepJson.mode === "chunked_pdf" &&
+            prepJson.draftDocumentId &&
+            prepJson.geminiFileUri &&
+            prepJson.ranges &&
+            prepJson.ranges.length > 0
+          ) {
+            const ranges = prepJson.ranges;
+            try {
+              for (let rIdx = 0; rIdx < ranges.length; rIdx++) {
+                const rng = ranges[rIdx];
+                const pct = Math.max(
+                  8,
+                  Math.min(90, Math.round(((rIdx + 0.35) / ranges.length) * 90))
+                );
+
+                updateIngestJob(jobId, {
+                  stage: "analyzing",
+                  analyzePercent: pct,
+                  detailText: `Analizando libro (${rng.label}) — Bloque ${rng.partIndex} de ${rng.totalParts}...`,
+                });
+
+                let rangeSuccess = false;
+                let lastRangeErr = "";
+                for (let attempt = 0; attempt < 2 && !rangeSuccess; attempt++) {
+                  const rangeRes = await fetch("/api/admin/knowledge/ingest", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      action: "extract_gemini_pdf_range",
+                      draftDocumentId: prepJson.draftDocumentId,
+                      geminiFileUri: prepJson.geminiFileUri,
+                      fileName: file.name,
+                      mimeType: "application/pdf",
+                      startPage: rng.startPage,
+                      endPage: rng.endPage,
+                      partIndex: rng.partIndex,
+                      totalParts: rng.totalParts,
+                    }),
+                  });
+                  const rangeJson = await safeParseJson<{ ok?: boolean }>(
+                    rangeRes
+                  );
+                  if (rangeRes.ok && rangeJson.ok) {
+                    rangeSuccess = true;
+                  } else {
+                    lastRangeErr =
+                      rangeJson.error ||
+                      `Error leyendo ${rng.label} (HTTP ${rangeRes.status}).`;
+                  }
+                }
+
+                if (!rangeSuccess) {
+                  throw new Error(lastRangeErr);
+                }
+              }
+
+              updateIngestJob(jobId, {
+                stage: "analyzing",
+                analyzePercent: 95,
+                detailText:
+                  finalCategory === "__auto__"
+                    ? "Clasificando categoría con IA y vectorizando libro completo (768d)..."
+                    : "Vectorizando libro completo en Cerebro IA (768d)...",
+              });
+
+              const finRes = await fetch("/api/admin/knowledge/ingest", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  action: "finalize_chunked_document",
+                  draftDocumentId: prepJson.draftDocumentId,
+                  geminiFileName: prepJson.geminiFileName,
+                  category: finalCategory,
+                }),
+              });
+
+              const finJson = await safeParseJson<{
+                ok?: boolean;
+                category?: string;
+                isNewCategory?: boolean;
+                chunksIndexed?: number;
+              }>(finRes);
+
+              if (!finRes.ok || !finJson.ok) {
+                throw new Error(
+                  finJson.error || "Error al finalizar la indexación del libro."
+                );
+              }
+
+              finalAssignedCat = (finJson.category || "general").toUpperCase();
+              finalIsNewCat = Boolean(finJson.isNewCategory);
+              finalChunks = finJson.chunksIndexed ?? 0;
+            } catch (chunkErr) {
+              await fetch("/api/admin/knowledge/ingest", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  action: "cleanup_chunked_document",
+                  draftDocumentId: prepJson.draftDocumentId,
+                  geminiFileName: prepJson.geminiFileName,
+                }),
+              }).catch(() => undefined);
+              throw chunkErr;
+            }
+          }
+
           okCount++;
-          chunksTotal += chunks;
+          chunksTotal += finalChunks;
 
           updateIngestJob(jobId, {
             stage: "done",
             uploadPercent: 100,
-            categoryAssigned: assignedCat,
-            isNewCategory: procJson.isNewCategory,
-            chunksIndexed: chunks,
-            detailText: `Completado · ${chunks} fragmentos · Categoría: ${assignedCat}${
-              procJson.isNewCategory ? " (Nueva creada por IA)" : ""
+            analyzePercent: 100,
+            categoryAssigned: finalAssignedCat,
+            isNewCategory: finalIsNewCat,
+            chunksIndexed: finalChunks,
+            detailText: `Completado · ${finalChunks} fragmentos · Categoría: ${finalAssignedCat}${
+              finalIsNewCat ? " (Nueva creada por IA)" : ""
             }`,
           });
 
@@ -4616,7 +4738,10 @@ export default function AdminDashboardClient() {
                         {job.stage === "queued" && "En cola"}
                         {job.stage === "uploading" &&
                           `Subiendo ${job.uploadPercent ?? 0}%`}
-                        {job.stage === "analyzing" && "Analizando IA"}
+                        {job.stage === "analyzing" &&
+                          (typeof job.analyzePercent === "number"
+                            ? `Analizando ${job.analyzePercent}%`
+                            : "Analizando IA")}
                         {job.stage === "done" && "Completado"}
                         {job.stage === "error" && "Error"}
                       </span>
@@ -4631,6 +4756,13 @@ export default function AdminDashboardClient() {
                             value={job.uploadPercent ?? 0}
                             max={100}
                             aria-label={`Subiendo ${job.name}`}
+                          />
+                        ) : typeof job.analyzePercent === "number" ? (
+                          <progress
+                            className="geny-progress"
+                            value={job.analyzePercent}
+                            max={100}
+                            aria-label={`Analizando ${job.name}`}
                           />
                         ) : (
                           <progress

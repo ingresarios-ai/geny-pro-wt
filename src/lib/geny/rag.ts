@@ -201,6 +201,49 @@ export async function generateEmbedding768(
   }
 }
 
+export async function generateEmbeddingsBatch768(
+  texts: string[]
+): Promise<Array<number[] | null>> {
+  if (texts.length === 0) return [];
+  const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+  if (!apiKey) return texts.map(() => null);
+
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:batchEmbedContents?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          requests: texts.map((text) => ({
+            model: "models/gemini-embedding-001",
+            content: { parts: [{ text: text.slice(0, 8000) }] },
+            outputDimensionality: 768,
+          })),
+        }),
+      }
+    );
+
+    if (res.ok) {
+      const json = (await res.json()) as {
+        embeddings?: Array<{ values?: number[] }>;
+      };
+      if (
+        Array.isArray(json.embeddings) &&
+        json.embeddings.length === texts.length
+      ) {
+        return json.embeddings.map((e) =>
+          Array.isArray(e?.values) && e.values.length === 768 ? e.values : null
+        );
+      }
+    }
+  } catch {
+    // Fallback paralelo individual abajo
+  }
+
+  return Promise.all(texts.map((t) => generateEmbedding768(t)));
+}
+
 export async function indexKnowledgeDocument(params: {
   documentId: string;
   title: string;
@@ -224,11 +267,11 @@ export async function indexKnowledgeDocument(params: {
     embedding: number[] | null;
   }> = [];
 
-  const BATCH_SIZE = 8;
+  const BATCH_SIZE = 75;
   for (let start = 0; start < chunks.length; start += BATCH_SIZE) {
     const slice = chunks.slice(start, start + BATCH_SIZE);
-    const embeddings = await Promise.all(
-      slice.map((chunk) => generateEmbedding768(`${params.title}\n${chunk}`))
+    const embeddings = await generateEmbeddingsBatch768(
+      slice.map((chunk) => `${params.title}\n${chunk}`)
     );
     for (let j = 0; j < slice.length; j++) {
       rows.push({
@@ -242,8 +285,10 @@ export async function indexKnowledgeDocument(params: {
     }
   }
 
-  if (rows.length > 0) {
-    const { error } = await supabase.from("geny_knowledge_chunks").insert(rows);
+  const INSERT_BATCH = 100;
+  for (let i = 0; i < rows.length; i += INSERT_BATCH) {
+    const batch = rows.slice(i, i + INSERT_BATCH);
+    const { error } = await supabase.from("geny_knowledge_chunks").insert(batch);
     if (error) {
       throw new Error(`Error indexando fragmentos: ${error.message}`);
     }

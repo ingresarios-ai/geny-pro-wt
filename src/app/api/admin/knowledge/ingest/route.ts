@@ -75,7 +75,7 @@ async function uploadBufferToGeminiFileApi(params: {
 
   // Esperar si Gemini aún está indexando el PDF grande (PROCESSING -> ACTIVE)
   let state = json.file?.state || "ACTIVE";
-  for (let attempt = 0; attempt < 10 && state === "PROCESSING"; attempt++) {
+  for (let attempt = 0; attempt < 16 && state === "PROCESSING"; attempt++) {
     await new Promise((r) => setTimeout(r, 1500));
     const checkRes = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/${fileNameId}?key=${apiKey}`
@@ -87,6 +87,140 @@ async function uploadBufferToGeminiFileApi(params: {
   }
 
   return state === "ACTIVE" ? { name: fileNameId, uri: fileUri } : null;
+}
+
+function estimatePdfPageCount(buffer: Buffer): number {
+  const raw = buffer.toString("latin1");
+  let maxFromPagesTree = 0;
+  const pagesTreeRegex = /\/Type\s*\/Pages\b[\s\S]{0,350}?\/Count\s+(\d+)/g;
+  let match: RegExpExecArray | null;
+  while ((match = pagesTreeRegex.exec(raw)) !== null) {
+    const n = Number(match[1]);
+    if (Number.isFinite(n) && n > maxFromPagesTree && n < 5000) {
+      maxFromPagesTree = n;
+    }
+  }
+
+  const singlePageMatches = raw.match(/\/Type\s*\/Page\b(?!s)/g);
+  const leafCount = singlePageMatches ? singlePageMatches.length : 0;
+  return Math.max(maxFromPagesTree, leafCount);
+}
+
+async function detectPdfPagesWithGemini(
+  geminiFileUri: string,
+  mimeType: string
+): Promise<number> {
+  const models = ["gemini-3.5-flash", "gemini-3.8-flash"];
+  for (const modelId of models) {
+    try {
+      const res = await generateText({
+        model: google(modelId),
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: "¿Cuántas páginas en total tiene este archivo PDF? Responde ÚNICAMENTE con el número entero (solo dígitos).",
+              },
+              {
+                type: "file",
+                data: new URL(geminiFileUri),
+                mimeType,
+              },
+            ],
+          },
+        ],
+        maxTokens: 32,
+        temperature: 0,
+        maxRetries: 0,
+        providerOptions: {
+          google: { thinkingConfig: { thinkingBudget: 0 } },
+        },
+      });
+      const digits = res.text.match(/\d+/)?.[0];
+      const parsed = digits ? Number(digits) : 0;
+      if (parsed >= 1 && parsed < 5000) {
+        return parsed;
+      }
+    } catch {
+      // Continuar con siguiente modelo
+    }
+  }
+  return 0;
+}
+
+async function extractPdfRangeWithGeminiVision(params: {
+  fileName: string;
+  mimeType: string;
+  geminiFileUri: string;
+  startPage?: number;
+  endPage?: number;
+  partIndex: number;
+  totalParts: number;
+}): Promise<string> {
+  const candidateModels = [
+    "gemini-3.8-flash",
+    "gemini-3.5-flash",
+    "gemini-3.5-flash-lite",
+  ];
+
+  const scopeInstruction =
+    params.startPage && params.endPage
+      ? `INSTRUCCIÓN DE RANGO ESTRICTA: Procesa y transcribe ÚNICAMENTE desde la página ${params.startPage} hasta la página ${params.endPage} (inclusive) de este PDF. Ignora las demás páginas porque se procesan en otros bloques. No resumas ni omitas reglas de las páginas ${params.startPage} a ${params.endPage}; si en esas páginas no hay contenido relevante (ej. páginas en blanco), indícalo brevemente.`
+      : `INSTRUCCIÓN DE SECCIÓN ESTRICTA: Este libro se está procesando en ${params.totalParts} partes iguales. Procesa y transcribe ÚNICAMENTE la Parte ${params.partIndex} de ${params.totalParts} del documento en orden secuencial, sin resumir ni repetir otras partes.`;
+
+  let lastError: unknown = null;
+  for (const modelId of candidateModels) {
+    try {
+      const result = await generateText({
+        model: google(modelId),
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: `${MULTIMODAL_EXTRACTION_PROMPT}\n\nArchivo fuente: "${params.fileName}"\n${scopeInstruction}`,
+              },
+              {
+                type: "file",
+                data: new URL(params.geminiFileUri),
+                mimeType: params.mimeType,
+              },
+            ],
+          },
+        ],
+        maxTokens: 8192,
+        temperature: 0.1,
+        maxRetries: 0,
+        ...(modelId !== "gemini-3.5-flash-lite"
+          ? {
+              providerOptions: {
+                google: { thinkingConfig: { thinkingBudget: 0 } },
+              },
+            }
+          : {}),
+      });
+
+      const extracted = result.text.trim();
+      if (extracted) {
+        return extracted;
+      }
+    } catch (err) {
+      lastError = err;
+      console.warn(
+        `[GENY RAG Chunked PDF] Modelo ${modelId} falló en bloque ${params.partIndex}/${params.totalParts} de ${params.fileName}:`,
+        err instanceof Error ? err.message : err
+      );
+    }
+  }
+
+  throw new Error(
+    `No se pudo extraer el bloque ${params.partIndex}/${params.totalParts}: ${
+      lastError instanceof Error ? lastError.message : "Error desconocido"
+    }`
+  );
 }
 
 async function deleteGeminiUploadedFile(name: string): Promise<void> {
@@ -174,8 +308,16 @@ async function extractWithGeminiVision(params: {
         const result = await generateText({
           model: google(modelId),
           messages,
-          maxTokens: 16384,
+          maxTokens: 12288,
           temperature: 0.1,
+          maxRetries: 0,
+          ...(modelId !== "gemini-3.5-flash-lite"
+            ? {
+                providerOptions: {
+                  google: { thinkingConfig: { thinkingBudget: 0 } },
+                },
+              }
+            : {}),
         });
 
         const extracted = result.text.trim();
@@ -627,6 +769,14 @@ ${params.rawText.slice(0, 75000)}`;
         prompt,
         maxTokens: 4096,
         temperature: 0.1,
+        maxRetries: 0,
+        ...(modelId !== "gemini-3.5-flash-lite"
+          ? {
+              providerOptions: {
+                google: { thinkingConfig: { thinkingBudget: 0 } },
+              },
+            }
+          : {}),
       });
       const text = result.text.trim();
       if (text.length >= 80) {
@@ -939,10 +1089,24 @@ export async function POST(req: NextRequest) {
     }
 
     const body = (await req.json()) as {
-      action?: "create_upload_url" | "ingest_storage_file" | "expand_targets";
+      action?:
+        | "create_upload_url"
+        | "prepare_storage_file"
+        | "extract_gemini_pdf_range"
+        | "finalize_chunked_document"
+        | "cleanup_chunked_document"
+        | "ingest_storage_file"
+        | "expand_targets";
       fileName?: string;
       mimeType?: string;
       storagePath?: string;
+      draftDocumentId?: string;
+      geminiFileName?: string;
+      geminiFileUri?: string;
+      startPage?: number;
+      endPage?: number;
+      partIndex?: number;
+      totalParts?: number;
       title?: string;
       titleHint?: string;
       driveUrls?: string;
@@ -979,6 +1143,336 @@ export async function POST(req: NextRequest) {
         signedUrl: data.signedUrl,
         storagePath,
       });
+    }
+
+    // ACCIÓN 1B: Preparar archivo subido; si es un libro/PDF mediano o grande, subir a Gemini File API y dividir en bloques de 15 páginas (< 15s por bloque, cero error 504)
+    if (body.action === "prepare_storage_file") {
+      if (!body.storagePath || !body.fileName) {
+        return NextResponse.json(
+          { error: "Falta storagePath o fileName." },
+          { status: 400 }
+        );
+      }
+
+      const supabase = getSupabaseAdmin();
+      try {
+        const { data: blobData, error: dlErr } = await supabase.storage
+          .from(STORAGE_BUCKET)
+          .download(body.storagePath);
+
+        if (dlErr || !blobData) {
+          return NextResponse.json(
+            {
+              error:
+                dlErr?.message ||
+                "No se encontró el archivo subido en el almacenamiento temporal.",
+            },
+            { status: 400 }
+          );
+        }
+
+        const arrayBuf = await blobData.arrayBuffer();
+        const buffer = Buffer.from(arrayBuf);
+        const cleanTitle =
+          (body.title || "").trim() ||
+          body.fileName.replace(/\.[a-zA-Z0-9]+$/, "");
+        const lowerName = body.fileName.toLowerCase();
+        const isPdf =
+          lowerName.endsWith(".pdf") ||
+          (body.mimeType || "").toLowerCase() === "application/pdf";
+
+        if (isPdf) {
+          const estimatedPages = estimatePdfPageCount(buffer);
+          const isSmallPdf =
+            buffer.length <= 600 * 1024 &&
+            estimatedPages >= 1 &&
+            estimatedPages <= 10;
+
+          if (!isSmallPdf) {
+            const uploaded = await uploadBufferToGeminiFileApi({
+              fileName: body.fileName,
+              mimeType: "application/pdf",
+              buffer,
+            });
+
+            if (uploaded) {
+              const totalPages =
+                estimatedPages >= 2
+                  ? estimatedPages
+                  : await detectPdfPagesWithGemini(
+                      uploaded.uri,
+                      "application/pdf"
+                    );
+
+              const { data: draftDoc, error: draftErr } = await supabase
+                .from("geny_knowledge_documents")
+                .insert({
+                  title: cleanTitle,
+                  category:
+                    body.category &&
+                    body.category !== "__auto__" &&
+                    body.category !== "__custom__"
+                      ? body.category
+                      : "general",
+                  raw_content: "",
+                  is_active: false,
+                })
+                .select("id")
+                .single();
+
+              if (draftErr || !draftDoc) {
+                await deleteGeminiUploadedFile(uploaded.name);
+                throw new Error(
+                  draftErr?.message ||
+                    "No se pudo inicializar el borrador del libro."
+                );
+              }
+
+              const PAGES_PER_WINDOW = 15;
+              const ranges: Array<{
+                partIndex: number;
+                totalParts: number;
+                startPage?: number;
+                endPage?: number;
+                label: string;
+              }> = [];
+
+              if (totalPages >= 1) {
+                const totalParts = Math.ceil(totalPages / PAGES_PER_WINDOW);
+                for (let p = 0; p < totalParts; p++) {
+                  const startPage = p * PAGES_PER_WINDOW + 1;
+                  const endPage = Math.min(
+                    (p + 1) * PAGES_PER_WINDOW,
+                    totalPages
+                  );
+                  ranges.push({
+                    partIndex: p + 1,
+                    totalParts,
+                    startPage,
+                    endPage,
+                    label: `Págs. ${startPage}–${endPage} de ${totalPages}`,
+                  });
+                }
+              } else {
+                const fallbackParts = Math.max(
+                  4,
+                  Math.min(12, Math.ceil(buffer.length / (2 * 1024 * 1024)))
+                );
+                for (let p = 0; p < fallbackParts; p++) {
+                  ranges.push({
+                    partIndex: p + 1,
+                    totalParts: fallbackParts,
+                    label: `Sección ${p + 1} de ${fallbackParts}`,
+                  });
+                }
+              }
+
+              return NextResponse.json({
+                ok: true,
+                mode: "chunked_pdf",
+                draftDocumentId: draftDoc.id,
+                geminiFileName: uploaded.name,
+                geminiFileUri: uploaded.uri,
+                totalPages,
+                ranges,
+              });
+            }
+          }
+        }
+
+        // Archivos rápidos (.md, .txt, .csv, .docx, imágenes o PDF corto <= 10 págs)
+        const extractedMarkdown = await processBufferToMarkdown({
+          fileName: body.fileName,
+          mimeType: body.mimeType || "application/pdf",
+          buffer,
+        });
+
+        if (!extractedMarkdown.trim()) {
+          return NextResponse.json(
+            {
+              error: `No se pudo extraer contenido legible de ${body.fileName}.`,
+            },
+            { status: 400 }
+          );
+        }
+
+        const saved = await saveAndIndexDocument({
+          title: cleanTitle,
+          category: body.category || "__auto__",
+          rawContent: extractedMarkdown,
+        });
+
+        return NextResponse.json({
+          ok: true,
+          mode: "completed",
+          document: saved.doc,
+          category: saved.category,
+          autoClassified: saved.autoClassified,
+          isNewCategory: saved.isNewCategory,
+          chunksIndexed: saved.chunksIndexed,
+          charactersExtracted: extractedMarkdown.length,
+        });
+      } finally {
+        await supabase.storage
+          .from(STORAGE_BUCKET)
+          .remove([body.storagePath])
+          .catch(() => undefined);
+      }
+    }
+
+    // ACCIÓN 1C: Extraer un bloque de 15 páginas de un libro PDF ya cargado en Gemini File API (< 15s por llamada)
+    if (body.action === "extract_gemini_pdf_range") {
+      if (
+        !body.draftDocumentId ||
+        !body.geminiFileUri ||
+        !body.partIndex ||
+        !body.totalParts
+      ) {
+        return NextResponse.json(
+          { error: "Faltan parámetros para extraer el bloque del PDF." },
+          { status: 400 }
+        );
+      }
+
+      const supabase = getSupabaseAdmin();
+      const markdownPart = await extractPdfRangeWithGeminiVision({
+        fileName: body.fileName || "Libro.pdf",
+        mimeType: body.mimeType || "application/pdf",
+        geminiFileUri: body.geminiFileUri,
+        startPage: body.startPage,
+        endPage: body.endPage,
+        partIndex: body.partIndex,
+        totalParts: body.totalParts,
+      });
+
+      const { data: currentDoc, error: readErr } = await supabase
+        .from("geny_knowledge_documents")
+        .select("raw_content")
+        .eq("id", body.draftDocumentId)
+        .single();
+
+      if (readErr || !currentDoc) {
+        return NextResponse.json(
+          { error: "No se encontró el borrador del libro en progreso." },
+          { status: 404 }
+        );
+      }
+
+      const headerLabel =
+        body.startPage && body.endPage
+          ? `<!-- Páginas ${body.startPage}-${body.endPage} -->\n`
+          : `<!-- Bloque ${body.partIndex}/${body.totalParts} -->\n`;
+
+      const nextRawContent = currentDoc.raw_content
+        ? `${currentDoc.raw_content}\n\n---\n\n${headerLabel}${markdownPart}`
+        : `${headerLabel}${markdownPart}`;
+
+      const { error: updErr } = await supabase
+        .from("geny_knowledge_documents")
+        .update({
+          raw_content: nextRawContent,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", body.draftDocumentId);
+
+      if (updErr) {
+        throw new Error(updErr.message);
+      }
+
+      return NextResponse.json({
+        ok: true,
+        charsExtracted: markdownPart.length,
+      });
+    }
+
+    // ACCIÓN 1D: Clasificar categoría IA, activar documento completo y vectorizar por lotes rápidos
+    if (body.action === "finalize_chunked_document") {
+      if (!body.draftDocumentId) {
+        return NextResponse.json(
+          { error: "Falta draftDocumentId." },
+          { status: 400 }
+        );
+      }
+
+      const supabase = getSupabaseAdmin();
+      if (body.geminiFileName) {
+        await deleteGeminiUploadedFile(body.geminiFileName);
+      }
+
+      const { data: draftDoc, error: readErr } = await supabase
+        .from("geny_knowledge_documents")
+        .select("id, title, raw_content")
+        .eq("id", body.draftDocumentId)
+        .single();
+
+      if (readErr || !draftDoc || !draftDoc.raw_content.trim()) {
+        if (body.draftDocumentId) {
+          await supabase
+            .from("geny_knowledge_documents")
+            .delete()
+            .eq("id", body.draftDocumentId)
+            .eq("is_active", false);
+        }
+        return NextResponse.json(
+          { error: "No se extrajo contenido válido del PDF." },
+          { status: 400 }
+        );
+      }
+
+      const {
+        category: cleanCategory,
+        autoClassified,
+        isNewCategory,
+      } = await resolveOrAutoClassifyCategory({
+        requestedCategory: body.category || "__auto__",
+        title: draftDoc.title,
+        rawContent: draftDoc.raw_content,
+      });
+
+      const { error: activateErr } = await supabase
+        .from("geny_knowledge_documents")
+        .update({
+          category: cleanCategory,
+          is_active: true,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", draftDoc.id);
+
+      if (activateErr) {
+        throw new Error(activateErr.message);
+      }
+
+      const { chunksIndexed } = await indexKnowledgeDocument({
+        documentId: draftDoc.id,
+        title: draftDoc.title,
+        category: cleanCategory,
+        rawContent: draftDoc.raw_content,
+      });
+
+      return NextResponse.json({
+        ok: true,
+        category: cleanCategory,
+        autoClassified,
+        isNewCategory,
+        chunksIndexed,
+        charactersExtracted: draftDoc.raw_content.length,
+      });
+    }
+
+    // ACCIÓN 1E: Limpieza en caso de error durante extracción por bloques
+    if (body.action === "cleanup_chunked_document") {
+      const supabase = getSupabaseAdmin();
+      if (body.geminiFileName) {
+        await deleteGeminiUploadedFile(body.geminiFileName);
+      }
+      if (body.draftDocumentId) {
+        await supabase
+          .from("geny_knowledge_documents")
+          .delete()
+          .eq("id", body.draftDocumentId)
+          .eq("is_active", false);
+      }
+      return NextResponse.json({ ok: true });
     }
 
     // ACCIÓN 2: Procesar archivo ya subido a Supabase Storage y limpiar el archivo temporal al terminar
