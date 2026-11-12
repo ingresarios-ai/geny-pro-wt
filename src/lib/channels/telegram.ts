@@ -21,15 +21,44 @@ export async function sendTelegramTyping(chatId: string | number): Promise<void>
   }
 }
 
+function formatTelegramHtml(rawText: string): string {
+  // 1. Quitar backticks alrededor de URLs para que Telegram las vuelva enlaces clicables en 1 toque
+  const unwrappedUrls = rawText.replace(/`(https?:\/\/[^\s`]+)`/gi, "$1");
+
+  // 2. Escapar caracteres especiales HTML
+  let html = unwrappedUrls
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+
+  // 3. Bloques de código triple ```...``` y código inline `...` (sin atrapar URLs)
+  html = html.replace(/```([\s\S]*?)```/g, "<pre>$1</pre>");
+  html = html.replace(/`([^`\n]+)`/g, "<code>$1</code>");
+
+  // 4. Enlaces Markdown [texto](https://...) -> <a href="...">texto</a>
+  html = html.replace(
+    /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+    '<a href="$2">$1</a>'
+  );
+
+  // 5. Negritas **texto** -> <b>texto</b>
+  html = html.replace(/\*\*([^*\n]+)\*\*/g, "<b>$1</b>");
+
+  return html;
+}
+
 export async function sendTelegramMessage(
   chatId: string | number,
   text: string
 ): Promise<void> {
   const token = getBotToken();
+  // Quitar backticks envolviendo URLs también para el fallback de texto plano
+  const cleanText = text.replace(/`(https?:\/\/[^\s`]+)`/gi, "$1");
+
   // Telegram limit is 4096 chars; split safely if longer
   const chunks: string[] = [];
-  for (let i = 0; i < text.length; i += 3800) {
-    chunks.push(text.slice(i, i + 3800));
+  for (let i = 0; i < cleanText.length; i += 3600) {
+    chunks.push(cleanText.slice(i, i + 3600));
   }
 
   for (const part of chunks) {
@@ -38,14 +67,14 @@ export async function sendTelegramMessage(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         chat_id: chatId,
-        text: part,
-        parse_mode: "Markdown",
+        text: formatTelegramHtml(part),
+        parse_mode: "HTML",
         disable_web_page_preview: true,
       }),
     });
 
     if (!res.ok) {
-      // Fallback sin parse_mode por si un símbolo de trading rompe Markdown de Telegram
+      // Fallback sin parse_mode por si algún formato rompe el parser de Telegram
       await fetch(`${TG_API_BASE}/bot${token}/sendMessage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

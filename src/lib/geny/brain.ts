@@ -8,7 +8,7 @@ import {
   getSupabaseAdmin,
 } from "@/lib/supabase/admin";
 import { evaluateGuardrails } from "@/lib/geny/guardrails";
-import { searchKnowledgeContext } from "@/lib/geny/rag";
+import { extractReferenceUrls, searchKnowledgeContext } from "@/lib/geny/rag";
 import { calculateMessageCostUsd } from "@/lib/geny/pricing";
 
 export interface BrainInput {
@@ -146,10 +146,21 @@ export async function runGenyBrain(input: BrainInput): Promise<BrainOutput> {
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(10),
-    searchKnowledgeContext(effectiveUserText, 4),
+    searchKnowledgeContext(effectiveUserText, 5),
   ]);
 
   const recentTurns = (historyRes.data || []).reverse();
+
+  const hasReferenceLinks = ragChunks.some(
+    (c) => extractReferenceUrls(c.content).length > 0
+  );
+
+  const referenceLinksDirective = hasReferenceLinks
+    ? `\n\n--- INSTRUCCIÓN DE REPETICIÓN DE SESIÓN Y ENLACES DE REFERENCIA ---\n` +
+      `1. Si tu respuesta utiliza información de algún fragmento anterior que incluya un enlace de acceso, grabación o referencia (por ejemplo https://tinyurl.com/Pre..., https://tinyurl.com/Ent..., https://tinyurl.com/Pos..., Zoom, YouTube, Vimeo o script oficial de TradingView), invita de forma natural al alumno a ver la repetición de esa sesión (mencionando la sesión y su fecha, ej. "Premarket del 25/09/2026" o "Entrenamiento del 03/11/2026") compartiendo el enlace EXACTO.\n` +
+      `2. Escribe la URL en texto plano limpio (ej. https://tinyurl.com/Pre2026-09-25), SIN encerrarla en comillas invertidas (\` \`) ni corchetes, para que el alumno pueda abrirla con un toque desde su celular.\n` +
+      `3. Incluye únicamente el enlace (máximo 1 o 2) que corresponda directamente al tema consultado. JAMÁS inventes, completes ni modifiques una URL que no aparezca literalmente en los fragmentos anteriores.`
+    : "";
 
   const knowledgeBlock =
     ragChunks.length > 0
@@ -159,7 +170,8 @@ export async function runGenyBrain(input: BrainInput): Promise<BrainOutput> {
             (c, idx) =>
               `[Fuente ${idx + 1}: ${c.document_title} (${c.category})]\n${c.content}`
           )
-          .join("\n\n")
+          .join("\n\n") +
+        referenceLinksDirective
       : "";
 
   const studentContextBlock =
@@ -285,7 +297,9 @@ export async function runGenyBrain(input: BrainInput): Promise<BrainOutput> {
     throw new Error("No se obtuvo respuesta del modelo de IA.");
   }
 
-  const replyText = aiResult.text.trim();
+  const replyText = aiResult.text
+    .trim()
+    .replace(/`(https?:\/\/[^\s`]+)`/gi, "$1");
   const latencyMs = Date.now() - startedAt;
 
   const tokensIn = aiResult.usage?.promptTokens ?? 0;

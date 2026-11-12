@@ -175,31 +175,82 @@ export interface RetrievedChunk {
   score: number;
 }
 
-export function splitIntoChunks(
-  rawText: string,
-  maxChars = 2200,
-  overlapChars = 300
-): string[] {
-  const normalized = rawText.replace(/\r\n/g, "\n").trim();
-  if (!normalized) return [];
-  if (normalized.length <= maxChars) return [normalized];
+const URL_EXTRACT_REGEX = /https?:\/\/[^\s)\]`"'<>]+/gi;
 
-  const paragraphs = normalized.split(/\n{2,}/);
+function cleanExtractedUrl(rawUrl: string): string {
+  return rawUrl.replace(/[.,;:!?)+]+$/, "");
+}
+
+function isSpecificReferenceUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.toLowerCase().replace(/^www\./, "");
+    const path = parsed.pathname.replace(/\/+$/, "");
+    if (
+      !path &&
+      (host === "ingresarios.com" ||
+        host === "ingresarios.net" ||
+        host === "ingresarios.ai")
+    ) {
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function extractReferenceUrls(text: string): string[] {
+  const matches = text.match(URL_EXTRACT_REGEX) || [];
+  const seen = new Set<string>();
+  const urls: string[] = [];
+  for (const m of matches) {
+    const cleaned = cleanExtractedUrl(m);
+    if (cleaned && isSpecificReferenceUrl(cleaned) && !seen.has(cleaned)) {
+      seen.add(cleaned);
+      urls.push(cleaned);
+    }
+  }
+  return urls;
+}
+
+function chunkPlainBlock(
+  text: string,
+  maxChars: number,
+  overlapChars: number
+): string[] {
+  const trimmed = text.trim();
+  if (!trimmed) return [];
+  const safeMax = Math.max(600, maxChars);
+  const safeOverlap = Math.min(overlapChars, Math.floor(safeMax / 4));
+
+  if (trimmed.length <= safeMax) return [trimmed];
+
+  const paragraphs = trimmed.split(/\n{2,}/);
   const chunks: string[] = [];
   let current = "";
 
   for (const para of paragraphs) {
-    if ((current + "\n\n" + para).length <= maxChars) {
+    if ((current ? `${current}\n\n${para}` : para).length <= safeMax) {
       current = current ? `${current}\n\n${para}` : para;
     } else {
       if (current) {
         chunks.push(current.trim());
-        const tail = current.slice(-overlapChars);
-        current = `${tail}\n\n${para}`.slice(0, maxChars);
+        const tail = current.slice(-safeOverlap);
+        const candidate = `${tail}\n\n${para}`;
+        if (candidate.length <= safeMax) {
+          current = candidate;
+          continue;
+        }
+        current = "";
+      }
+
+      if (para.length <= safeMax) {
+        current = para;
       } else {
-        // Párrafo muy largo: cortar por tamaño fijo
-        for (let i = 0; i < para.length; i += maxChars - overlapChars) {
-          chunks.push(para.slice(i, i + maxChars).trim());
+        const step = safeMax - safeOverlap;
+        for (let i = 0; i < para.length; i += step) {
+          chunks.push(para.slice(i, i + safeMax).trim());
         }
         current = "";
       }
@@ -211,6 +262,138 @@ export function splitIntoChunks(
   }
 
   return chunks;
+}
+
+export function splitIntoChunks(
+  rawText: string,
+  maxChars = 2200,
+  overlapChars = 300
+): string[] {
+  // Quitar backticks alrededor de URLs para que el índice y los bots entreguen links clicables limpios
+  const normalized = rawText
+    .replace(/\r\n/g, "\n")
+    .replace(/`(https?:\/\/[^\s`]+)`/gi, "$1")
+    .trim();
+  if (!normalized) return [];
+
+  const rawBlocks = normalized
+    .split(/(?:\n+---\s*)?\n+(?=##\s+)/)
+    .map((b) => b.trim())
+    .filter(Boolean);
+
+  // Si no hay encabezados ##, usar partición clásica preservando enlaces iniciales en guías cortas
+  if (rawBlocks.length <= 1) {
+    const plainChunks = chunkPlainBlock(normalized, maxChars, overlapChars);
+    if (plainChunks.length <= 1 || normalized.length > 25000) {
+      return plainChunks;
+    }
+    const headerUrls = extractReferenceUrls(normalized.slice(0, 900)).slice(0, 2);
+    if (headerUrls.length === 0) return plainChunks;
+
+    return plainChunks.map((chunk, idx) => {
+      if (idx === 0 || headerUrls.every((u) => chunk.includes(u))) return chunk;
+      return `[Enlace de repetición/referencia: ${headerUrls.join(" | ")}]\n\n${chunk}`;
+    });
+  }
+
+  // Si el primer bloque es solo un título corto (# Título + periodo) sin URLs propias, unirlo a la primera sección
+  const blocks = [...rawBlocks];
+  if (
+    blocks.length >= 2 &&
+    !blocks[0].startsWith("## ") &&
+    blocks[0].length < 420 &&
+    extractReferenceUrls(blocks[0]).length === 0
+  ) {
+    blocks[1] = `${blocks[0]}\n\n---\n\n${blocks[1]}`;
+    blocks.shift();
+  }
+
+  const blockInfos = blocks.map((block) => {
+    const headingMatch = block.match(/(?:^|\n)##\s+([^\n]+)/);
+    const headingTitle = headingMatch
+      ? headingMatch[1].replace(/[*_`#]+/g, "").trim().slice(0, 120)
+      : "";
+    const topUrls = extractReferenceUrls(block.slice(0, 1000));
+    const allUrls = topUrls.length > 0 ? topUrls : extractReferenceUrls(block);
+    const sectionUrls = allUrls.slice(0, 2);
+    return { block, headingTitle, sectionUrls };
+  });
+
+  const blocksWithUrls = blockInfos.filter((b) => b.sectionUrls.length > 0);
+  // Si es una guía técnica corta de un solo tema (ej. un indicador) donde solo la ficha inicial trae el link oficial
+  const docLevelUrls =
+    blocksWithUrls.length === 1 && normalized.length <= 25000
+      ? blocksWithUrls[0].sectionUrls
+      : [];
+
+  const finalChunks: string[] = [];
+  let pendingSmallBuffer = "";
+
+  const flushPendingBuffer = () => {
+    if (!pendingSmallBuffer.trim()) return;
+    finalChunks.push(
+      ...chunkPlainBlock(pendingSmallBuffer, maxChars, overlapChars)
+    );
+    pendingSmallBuffer = "";
+  };
+
+  for (const info of blockInfos) {
+    const effectiveUrls =
+      info.sectionUrls.length > 0 ? info.sectionUrls : docLevelUrls;
+    const shouldIsolateSection =
+      effectiveUrls.length > 0 || info.block.length >= 600;
+
+    if (!shouldIsolateSection) {
+      const candidate = pendingSmallBuffer
+        ? `${pendingSmallBuffer}\n\n${info.block}`
+        : info.block;
+      if (candidate.length <= maxChars) {
+        pendingSmallBuffer = candidate;
+      } else {
+        flushPendingBuffer();
+        pendingSmallBuffer = info.block;
+      }
+      continue;
+    }
+
+    flushPendingBuffer();
+
+    const contextParts: string[] = [];
+    if (info.headingTitle) {
+      contextParts.push(`Sesión / Sección: ${info.headingTitle}`);
+    }
+    if (effectiveUrls.length > 0) {
+      contextParts.push(
+        `Enlace de repetición/referencia: ${effectiveUrls.join(" | ")}`
+      );
+    }
+    const contextPrefix =
+      contextParts.length > 0 ? `[${contextParts.join(" | ")}]\n\n` : "";
+
+    const bodyBudget = Math.max(700, maxChars - contextPrefix.length);
+    const subChunks = chunkPlainBlock(info.block, bodyBudget, overlapChars);
+
+    for (let idx = 0; idx < subChunks.length; idx++) {
+      const sub = subChunks[idx];
+      if (idx === 0) {
+        const missingUrls = effectiveUrls.filter((u) => !sub.includes(u));
+        if (missingUrls.length > 0) {
+          finalChunks.push(
+            `[Enlace de repetición/referencia: ${missingUrls.join(" | ")}]\n\n${sub}`
+          );
+        } else {
+          finalChunks.push(sub);
+        }
+      } else if (contextPrefix) {
+        finalChunks.push(`${contextPrefix}${sub}`);
+      } else {
+        finalChunks.push(sub);
+      }
+    }
+  }
+
+  flushPendingBuffer();
+  return finalChunks;
 }
 
 export async function generateEmbedding768(

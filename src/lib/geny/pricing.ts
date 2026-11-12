@@ -121,3 +121,4 @@ export function estimateRagExtractionCostUsd(params: {
     (approxEmbedTokens * rates.gemini_embedding_per_1m) / 1_000_000;
   return Number((llmUsd + embedUsd).toFixed(6));
 }
+
