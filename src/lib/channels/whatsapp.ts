@@ -34,8 +34,10 @@ export async function sendWhatsAppTextMessage(
   }
 
   const cleanRecipient = toPhone.replace(/[^\d]/g, "");
-  // Convertir negritas estilo Markdown **texto** a negrita nativa de WhatsApp *texto*
-  const waFormatted = bodyText.replace(/\*\*(.+?)\*\*/g, "*$1*");
+  // Quitar backticks en URLs para que sean clicables y convertir **texto** a negrita nativa de WhatsApp *texto*
+  const waFormatted = bodyText
+    .replace(/`(https?:\/\/[^\s`]+)`/gi, "$1")
+    .replace(/\*\*(.+?)\*\*/g, "*$1*");
 
   const chunks: string[] = [];
   for (let i = 0; i < waFormatted.length; i += 3800) {

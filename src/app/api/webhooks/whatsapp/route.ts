@@ -24,11 +24,11 @@ export async function GET(req: NextRequest) {
   const token = searchParams.get("hub.verify_token");
   const challenge = searchParams.get("hub.challenge");
 
-  if (
-    mode === "subscribe" &&
-    token &&
-    token === process.env.WHATSAPP_VERIFY_TOKEN
-  ) {
+  const expectedVerifyToken =
+    process.env.WHATSAPP_VERIFY_TOKEN?.trim() ||
+    "ingresarios_geny_verify_2026";
+
+  if (mode === "subscribe" && token && token === expectedVerifyToken) {
     return new NextResponse(challenge || "", { status: 200 });
   }
 
