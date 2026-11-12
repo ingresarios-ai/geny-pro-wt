@@ -307,6 +307,7 @@ export default function AdminDashboardClient() {
   const [isDraggingFiles, setIsDraggingFiles] = useState(false);
   const [driveUrlsText, setDriveUrlsText] = useState("");
   const [ingestStatusText, setIngestStatusText] = useState<string | null>(null);
+  const [ingestErrorText, setIngestErrorText] = useState<string | null>(null);
   const [indexingDoc, setIndexingDoc] = useState(false);
   const [ingestJobs, setIngestJobs] = useState<IngestJobItem[]>([]);
   const [ingestDrawerMinimized, setIngestDrawerMinimized] = useState(false);
@@ -1205,6 +1206,7 @@ export default function AdminDashboardClient() {
 
     const rawUrlsSnapshot = driveUrlsText;
     setIndexingDoc(true);
+    setIngestErrorText(null);
     setIngestStatusText(
       "Inspeccionando enlaces y listando documentos de carpetas de Google Drive..."
     );
@@ -1234,14 +1236,28 @@ export default function AdminDashboardClient() {
         !expandJson.expandedItems ||
         expandJson.expandedItems.length === 0
       ) {
-        notify(
+        const errMsg =
           expandJson.error ||
-            "No se detectaron URLs públicas ni documentos visibles en la carpeta de Drive."
-        );
+          "No se detectaron URLs públicas ni documentos visibles en la carpeta de Drive.";
+        setIngestErrorText(errMsg);
+        setIngestDrawerMinimized(false);
+        setIngestJobs((prev) => [
+          {
+            id: `url-err-${Date.now()}`,
+            name:
+              rawUrlsSnapshot.trim().split(/[\r\n\s]+/)[0] ||
+              "Enlace de Google Drive",
+            stage: "error",
+            detailText: errMsg,
+          },
+          ...prev.filter((j) => j.stage !== "done"),
+        ]);
+        notify(errMsg);
         return;
       }
 
       const items = expandJson.expandedItems;
+      setIngestErrorText(null);
       setDriveUrlsText("");
       if (docCategory === "__custom__") {
         setCustomCategory("");
@@ -1675,15 +1691,28 @@ export default function AdminDashboardClient() {
       </header>
 
       <main className="mx-auto max-w-7xl px-4 pt-8 sm:px-6">
-        {/* Live Toast / Status Notification */}
-        <div aria-live="polite" className="mb-3 min-h-6">
+        {/* Región persistente de notificaciones flotantes siempre visibles */}
+        <div
+          role="region"
+          aria-label="Notificaciones del sistema"
+          aria-live="polite"
+          className="pointer-events-none fixed top-5 right-5 z-50 max-w-md"
+        >
           {feedbackBanner && (
-            <div className="flex items-center gap-2.5 rounded-2xl border border-violet-500/40 bg-violet-500/15 px-4 py-3 text-sm font-medium text-violet-100 shadow-lg shadow-violet-950/50 backdrop-blur">
+            <div className="pointer-events-auto flex items-start gap-2.5 rounded-2xl border border-violet-500/45 bg-[#0C101C]/95 px-4 py-3 text-sm font-medium text-violet-100 shadow-2xl shadow-black/80 backdrop-blur-xl">
               <CheckCircle2
-                className="h-4 w-4 shrink-0 text-violet-300"
+                className="mt-0.5 h-4 w-4 shrink-0 text-violet-300"
                 aria-hidden="true"
               />
-              <span>{feedbackBanner}</span>
+              <span className="leading-snug">{feedbackBanner}</span>
+              <button
+                type="button"
+                aria-label="Cerrar notificación"
+                onClick={() => setFeedbackBanner(null)}
+                className="ml-1 shrink-0 cursor-pointer rounded-md p-0.5 text-slate-400 hover:bg-white/10 hover:text-white"
+              >
+                <X className="h-3.5 w-3.5" aria-hidden="true" />
+              </button>
             </div>
           )}
         </div>
@@ -2857,6 +2886,29 @@ export default function AdminDashboardClient() {
                     aria-hidden="true"
                   />
                   <span>{ingestStatusText}</span>
+                </div>
+              )}
+
+              {ingestErrorText && (
+                <div
+                  role="alert"
+                  className="flex items-start justify-between gap-3 rounded-2xl border border-rose-500/45 bg-rose-500/15 p-4 text-xs font-medium leading-relaxed text-rose-100"
+                >
+                  <div className="flex items-start gap-2.5">
+                    <AlertTriangle
+                      className="mt-0.5 h-4 w-4 shrink-0 text-rose-300"
+                      aria-hidden="true"
+                    />
+                    <span>{ingestErrorText}</span>
+                  </div>
+                  <button
+                    type="button"
+                    aria-label="Cerrar alerta de carga"
+                    onClick={() => setIngestErrorText(null)}
+                    className="shrink-0 cursor-pointer rounded-md p-1 text-rose-200 hover:bg-rose-500/20"
+                  >
+                    <X className="h-3.5 w-3.5" aria-hidden="true" />
+                  </button>
                 </div>
               )}
 

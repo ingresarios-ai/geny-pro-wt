@@ -926,54 +926,113 @@ async function fetchAndExtractWebUrl(rawUrl: string): Promise<{
   };
 }
 
-async function expandPublicDriveFolder(folderId: string): Promise<
-  Array<{ id: string; titleHint?: string }>
-> {
+async function expandPublicDriveFolder(folderId: string): Promise<{
+  status: "ok" | "private" | "empty";
+  entries: Array<{ id: string; titleHint?: string; isDoc?: boolean }>;
+}> {
   try {
+    // 1. Verificar primero si la carpeta redirige a inicio de sesión privado de Google
+    const folderCheck = await fetch(
+      `https://drive.google.com/drive/folders/${encodeURIComponent(folderId)}`,
+      {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        },
+        redirect: "manual",
+        cache: "no-store",
+      }
+    );
+
+    const redirectLoc = folderCheck.headers.get("location") || "";
+    if (
+      (folderCheck.status === 301 ||
+        folderCheck.status === 302 ||
+        folderCheck.status === 303 ||
+        folderCheck.status === 307) &&
+      redirectLoc.includes("accounts.google.com")
+    ) {
+      return { status: "private", entries: [] };
+    }
+
+    const results: Array<{ id: string; titleHint?: string; isDoc?: boolean }> =
+      [];
+    const seen = new Set<string>();
+
+    // 2. Intentar vista limpia embeddedfolderview para carpetas públicas ("Cualquier persona con el enlace")
     const res = await fetch(
       `https://drive.google.com/embeddedfolderview?id=${encodeURIComponent(folderId)}#list`,
       {
         headers: {
           "User-Agent":
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
         },
         cache: "no-store",
       }
     );
-    if (!res.ok) return [];
-    const html = await res.text();
 
-    const results: Array<{ id: string; titleHint?: string }> = [];
-    const seen = new Set<string>();
+    if (res.ok) {
+      const html = await res.text();
+      const entryRegex =
+        /id="entry-([a-zA-Z0-9_-]{20,})"[\s\S]{0,800}?class="flip-entry-title">([^<]+)</g;
+      let match: RegExpExecArray | null;
+      while ((match = entryRegex.exec(html)) !== null) {
+        const id = match[1];
+        const titleHint = decodeHtmlEntities(match[2]?.trim() || "");
+        const blockSlice = match[0] || "";
+        const isDoc = blockSlice.includes("docs.google.com/document/");
+        if (id && id !== folderId && !seen.has(id)) {
+          seen.add(id);
+          results.push({ id, titleHint, isDoc });
+        }
+      }
 
-    // En la vista embeddedfolderview cada archivo aparece con id="entry-{FILE_ID}" y <div class="flip-entry-title">Nombre</div>
-    const entryRegex =
-      /id="entry-([a-zA-Z0-9_-]{20,})"[\s\S]{0,600}?class="flip-entry-title">([^<]+)</g;
-    let match: RegExpExecArray | null;
-    while ((match = entryRegex.exec(html)) !== null) {
-      const id = match[1];
-      const titleHint = match[2]?.trim();
-      if (id && !seen.has(id)) {
-        seen.add(id);
-        results.push({ id, titleHint });
+      if (results.length === 0) {
+        const genericRegex =
+          /\/file\/d\/([a-zA-Z0-9_-]{20,})|\/document\/d\/([a-zA-Z0-9_-]{20,})/g;
+        while ((match = genericRegex.exec(html)) !== null) {
+          const id = match[1] || match[2];
+          const isDoc = Boolean(match[2]);
+          if (id && id !== folderId && !seen.has(id)) {
+            seen.add(id);
+            results.push({ id, isDoc });
+          }
+        }
+      }
+    } else if (res.status === 401 || res.status === 403 || res.status === 500) {
+      // embeddedfolderview devuelve 500/403 cuando la carpeta está en modo "Restringido"
+      if (folderCheck.status >= 400) {
+        return { status: "private", entries: [] };
       }
     }
 
-    if (results.length === 0) {
-      const genericRegex =
-        /\/file\/d\/([a-zA-Z0-9_-]{20,})|\/document\/d\/([a-zA-Z0-9_-]{20,})/g;
-      while ((match = genericRegex.exec(html)) !== null) {
-        const id = match[1] || match[2];
-        if (id && !seen.has(id)) {
+    // 3. Fallback: extraer IDs embebidos del HTML directo de la carpeta pública si embeddedfolderview no devolvió entradas
+    if (results.length === 0 && folderCheck.ok) {
+      const folderHtml = await folderCheck.text();
+      if (
+        folderHtml.includes("ServiceLogin") &&
+        !folderHtml.includes("_initData")
+      ) {
+        return { status: "private", entries: [] };
+      }
+      const dataIdRegex = /data-id="([a-zA-Z0-9_-]{25,45})"/g;
+      let m: RegExpExecArray | null;
+      while ((m = dataIdRegex.exec(folderHtml)) !== null) {
+        const id = m[1];
+        if (id && id !== folderId && !seen.has(id)) {
           seen.add(id);
           results.push({ id });
         }
       }
     }
 
-    return results;
+    if (results.length === 0) {
+      return { status: "empty", entries: [] };
+    }
+
+    return { status: "ok", entries: results };
   } catch {
-    return [];
+    return { status: "empty", entries: [] };
   }
 }
 
@@ -1599,18 +1658,29 @@ export async function POST(req: NextRequest) {
 
       for (const t of parsed) {
         if (t.type === "folder") {
-          const folderEntries = await expandPublicDriveFolder(t.id);
-          if (folderEntries.length === 0) {
+          const folderResult = await expandPublicDriveFolder(t.id);
+          if (folderResult.status === "private") {
             return NextResponse.json(
               {
                 error:
-                  "No se encontraron archivos visibles en la carpeta de Google Drive. Verifica que la carpeta tenga el permiso 'Cualquier persona con el enlace puede ver'.",
+                  "🔒 Esa carpeta de Google Drive es PRIVADA ('Restringido'). Haz clic derecho en la carpeta en Google Drive → Compartir → cambia Acceso general a 'Cualquier persona con el enlace (Lector)' e inténtalo de nuevo.",
               },
               { status: 400 }
             );
           }
-          for (const entry of folderEntries) {
-            const fileUrl = `https://drive.google.com/file/d/${entry.id}/view`;
+          if (folderResult.entries.length === 0) {
+            return NextResponse.json(
+              {
+                error:
+                  "No se encontraron archivos visibles dentro de la carpeta de Google Drive (verifica que no esté vacía o que sus archivos no estén solo dentro de subcarpetas).",
+              },
+              { status: 400 }
+            );
+          }
+          for (const entry of folderResult.entries) {
+            const fileUrl = entry.isDoc
+              ? `https://docs.google.com/document/d/${entry.id}/edit`
+              : `https://drive.google.com/file/d/${entry.id}/view`;
             expandedItems.push({
               label: entry.titleHint || `Archivo Drive (${entry.id.slice(0, 8)})`,
               url: fileUrl,
@@ -1685,23 +1755,34 @@ export async function POST(req: NextRequest) {
           sourceUrl: t.originalUrl,
         });
       } else if (t.type === "folder") {
-        const folderEntries = await expandPublicDriveFolder(t.id);
-        if (folderEntries.length === 0) {
+        const folderResult = await expandPublicDriveFolder(t.id);
+        if (folderResult.status === "private") {
           return NextResponse.json(
             {
               error:
-                "No se encontraron archivos visibles en la carpeta de Drive. Verifica que la carpeta tenga el permiso 'Cualquier persona con el enlace puede ver'.",
+                "🔒 Esa carpeta de Google Drive es PRIVADA ('Restringido'). Haz clic derecho en la carpeta en Google Drive → Compartir → cambia Acceso general a 'Cualquier persona con el enlace (Lector)' e inténtalo de nuevo.",
             },
             { status: 400 }
           );
         }
-        for (const entry of folderEntries) {
+        if (folderResult.entries.length === 0) {
+          return NextResponse.json(
+            {
+              error:
+                "No se encontraron archivos visibles dentro de la carpeta de Google Drive.",
+            },
+            { status: 400 }
+          );
+        }
+        for (const entry of folderResult.entries) {
           itemsToProcess.push({
             kind: "drive",
-            type: "file",
+            type: entry.isDoc ? "gdoc" : "file",
             id: entry.id,
             titleHint: entry.titleHint,
-            sourceUrl: `https://drive.google.com/file/d/${entry.id}/view`,
+            sourceUrl: entry.isDoc
+              ? `https://docs.google.com/document/d/${entry.id}/edit`
+              : `https://drive.google.com/file/d/${entry.id}/view`,
           });
         }
       } else {
