@@ -1,6 +1,6 @@
 # Estado Actual y Memoria del Proyecto — GENY PRO (INGRESARIOS)
 
-**Última actualización:** 11 de noviembre de 2026  
+**Última actualización:** 18 de noviembre de 2026  
 **Directorio del proyecto:** `/Users/josuegarcia/Antigravity/GENY MODELO`  
 **Dominio en Producción (Vercel `iad1`):** `https://genypro.ingresarios.ai/`  
 **Repositorio GitHub:** `https://github.com/ingresarios-ai/geny-pro-wt` (`main`)  
@@ -50,9 +50,9 @@ El usuario seleccionó continuar con:
 ### Avance del despliegue en vivo:
 1. ✅ **Bot de Telegram creado y conectado (`@GenyProIngresariosBot`):** Token guardado en `.env.local` y en `geny_settings.runtime_secrets` de Supabase; textos oficiales, banner `640x360` y menú `/start` listos.
 2. ✅ **Producción desplegada en `https://genypro.ingresarios.ai/`** (Vercel región `iad1`, conectada a GitHub `ingresarios-ai/geny-pro-wt`).
-3. ✅ **Webhook de Telegram activo en vivo:** `https://genypro.ingresarios.ai/api/webhooks/telegram`.
+3. ✅ **Webhook de Telegram activo y validado en vivo:** `https://genypro.ingresarios.ai/api/webhooks/telegram` (18 documentos indexados en RAG con enlaces de repeticiones de sesión `tinyurl.com` propagados por bloque y filtro estricto que bloquea enlaces a TradingView o landings comerciales como `tools.ingresarios.net`).
 4. ⏳ **Siguientes hitos inmediatos:**
-   - Probar en vivo la subida de `libro método Ingresarios.pdf` / carpetas de Google Drive en **Conocimiento RAG** y la conversación real con `@GenyProIngresariosBot` (validación OTP por correo).
-   - Evaluar si se desea la **Opción C** con Google Service Account para carpetas privadas de Drive.
-   - Importar la base de alumnos activos por CSV y conectar WhatsApp Cloud API + pasarelas de pago (Whop / Stripe / Hotmart).
+   - Pegar `WHATSAPP_PHONE_NUMBER_ID` y `WHATSAPP_ACCESS_TOKEN` en `/admin` y activar el Webhook `https://genypro.ingresarios.ai/api/webhooks/whatsapp` (token `ingresarios_geny_verify_2026`) con el teléfono ya activo en Meta.
+   - Retomar la mejora visual ejecutiva del panel `/admin` (menú lateral con vistas separadas, sin tocar lógica técnica).
+   - Importar la base de alumnos activos por CSV y conectar pasarelas de pago (Whop / Stripe / Hotmart).
 

@@ -47,11 +47,14 @@ Este archivo se carga automáticamente como memoria persistente del espacio de t
 6. **Telemetría de Consumo por Alumno y Estimador de Facturación API (`src/lib/geny/pricing.ts` + RPC `get_geny_usage_analytics`):**
    - Cálculo exacto en tiempo real del costo USD por cada mensaje (`geny_messages.estimated_cost_usd`, `thoughts_tokens`, `cached_tokens`) diferenciando si respondió **Google Gemini** (`gemini-3.8-flash` / `gemini-3.5-flash` / `lite` + audio nativo) o **Anthropic Claude** (`claude-sonnet-5-5` / `haiku` con Prompt Caching `-90%` + Whisper), más registro separado de extracción/vectorización de libros RAG (`public.geny_rag_usage_logs`).
    - Panel financiero ejecutivo en `/admin` (Hoy / Mes / Histórico, Gemini vs. Claude, Chat Alumnos vs. Libros RAG, Promedio/Alumno), columna `Consumo IA / Costo` por usuario, ordenamiento `Mayor Consumo IA`, exportación CSV con métricas de uso/costo y tarifas USD/1M editables (`pricing_overrides`).
+7. **Sugerencia Inteligente de Repeticiones de Sesión y Bloqueo de Landings Externas (`src/lib/geny/rag.ts` + `src/lib/geny/brain.ts`):**
+   - Partición inteligente por encabezados `## ` de sesión que propaga el título de sesión y su enlace de grabación (`https://tinyurl.com/Pre...`, `Ent...`, `Pos...`, Zoom, YouTube, Vimeo) a todos los fragmentos de esa sesión.
+   - Bloqueo estricto en 4 capas (`isSessionReplayUrl` + `stripNonReplayUrls`) contra enlaces de TradingView (`tradingview.com`) y landings comerciales (`tools.ingresarios.net`, `ingresarios.com`) para no desviar ni confundir a alumnos activos.
 
 ## 4. Punto Exacto Donde Nos Quedamos (Próximo Paso Seleccionado)
-- **Estado actual:** **Producción en vivo en `https://genypro.ingresarios.ai/`** con `@GenyProIngresariosBot` conectado por Webhook HTTPS seguro (`iad1`). Listo para **Paso 4: Prueba real en vivo en Telegram** (alta/verificación de miembro con OTP por correo + conversación real con `GENY PRO`).
+- **Estado actual:** **Producción activa y probada en vivo en `https://genypro.ingresarios.ai/`** con `@GenyProIngresariosBot` operando en Telegram (texto, voz, gráficos y enlaces de repeticiones de La Tribu) y 18 documentos activos en el RAG. Teléfono de **WhatsApp Cloud API** ya activo en Meta (pendiente pegar `WHATSAPP_PHONE_NUMBER_ID` y `WHATSAPP_ACCESS_TOKEN` en `/admin`).
 - **Pendientes posteriores en hoja de ruta:**
-  - Ofrecer/implementar la **Opción C de Google Drive** (sincronización con carpetas privadas vía Google Service Account) si el usuario lo requiere tras probar las Opciones A y B.
-  - Carga de manuales reales en el RAG e importación de alumnos activos por CSV.
-  - Conexión de webhooks en producción (Whop, Stripe, Hotmart y WhatsApp Cloud API para el piloto del 30 de noviembre de 2026).
+  - Terminar de pegar `WHATSAPP_PHONE_NUMBER_ID` y `WHATSAPP_ACCESS_TOKEN` en `/admin` y suscribir `messages` en Meta Webhook (`https://genypro.ingresarios.ai/api/webhooks/whatsapp`).
+  - Rediseño visual ejecutivo del panel `/admin` (menú lateral con vistas independientes, 100 % visual sin tocar lógica técnica) cuando el usuario indique retomarlo.
+  - Importación de alumnos activos por CSV y conexión de webhooks de pago (Whop, Stripe, Hotmart).
 
