@@ -181,23 +181,72 @@ function cleanExtractedUrl(rawUrl: string): string {
   return rawUrl.replace(/[.,;:!?)+]+$/, "");
 }
 
-function isSpecificReferenceUrl(url: string): boolean {
+export function isSessionReplayUrl(url: string): boolean {
   try {
     const parsed = new URL(url);
     const host = parsed.hostname.toLowerCase().replace(/^www\./, "");
     const path = parsed.pathname.replace(/\/+$/, "");
-    if (
-      !path &&
-      (host === "ingresarios.com" ||
-        host === "ingresarios.net" ||
-        host === "ingresarios.ai")
-    ) {
-      return false;
-    }
-    return true;
+    if (!path) return false;
+
+    // Solo permitir enlaces reales de repetición/grabación de sesiones (nunca landings comerciales ni TradingView)
+    return (
+      host === "tinyurl.com" ||
+      host.endsWith(".zoom.us") ||
+      host === "zoom.us" ||
+      host === "youtube.com" ||
+      host === "m.youtube.com" ||
+      host === "youtu.be" ||
+      host === "vimeo.com" ||
+      host === "player.vimeo.com" ||
+      host === "loom.com" ||
+      host === "drive.google.com"
+    );
   } catch {
     return false;
   }
+}
+
+export function stripNonReplayUrls(
+  text: string,
+  opts?: { allowSupportLinks?: boolean }
+): string {
+  if (!text) return text;
+  const isAllowed = (url: string) => {
+    if (isSessionReplayUrl(url)) return true;
+    if (opts?.allowSupportLinks) {
+      try {
+        const host = new URL(url).hostname.toLowerCase().replace(/^www\./, "");
+        if (host === "wa.me" || host === "t.me") return true;
+      } catch {
+        return false;
+      }
+    }
+    return false;
+  };
+
+  // 1. Limpiar enlaces Markdown [Etiqueta](https://...) que no sean repeticiones de sesión
+  let out = text.replace(
+    /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/gi,
+    (full, label: string, rawUrl: string) => {
+      const cleaned = cleanExtractedUrl(rawUrl);
+      if (isAllowed(cleaned)) return full;
+      return /^https?:\/\//i.test(label.trim()) ? "" : label;
+    }
+  );
+
+  // 2. Limpiar URLs sueltas que no sean repeticiones de sesión (ej. tradingview.com, tools.ingresarios.net, ingresarios.com)
+  out = out.replace(URL_EXTRACT_REGEX, (rawMatch) => {
+    const cleaned = cleanExtractedUrl(rawMatch);
+    if (isAllowed(cleaned)) return rawMatch;
+    const trailing = rawMatch.slice(cleaned.length);
+    return trailing;
+  });
+
+  // Limpiar líneas residuales vacías de viñetas de enlaces eliminados
+  return out
+    .replace(/^[ \t]*[-*]\s*\*\*[^*\n]*?(?:URL|Enlace|Plataforma|Recursos)[^*\n]*?\*\*:?[ \t]*\|?[ \t]*$/gim, "")
+    .replace(/[ \t]+\|[ \t]*$/gm, "")
+    .replace(/\n{3,}/g, "\n\n");
 }
 
 export function extractReferenceUrls(text: string): string[] {
@@ -206,7 +255,7 @@ export function extractReferenceUrls(text: string): string[] {
   const urls: string[] = [];
   for (const m of matches) {
     const cleaned = cleanExtractedUrl(m);
-    if (cleaned && isSpecificReferenceUrl(cleaned) && !seen.has(cleaned)) {
+    if (cleaned && isSessionReplayUrl(cleaned) && !seen.has(cleaned)) {
       seen.add(cleaned);
       urls.push(cleaned);
     }
@@ -269,11 +318,12 @@ export function splitIntoChunks(
   maxChars = 2200,
   overlapChars = 300
 ): string[] {
-  // Quitar backticks alrededor de URLs para que el índice y los bots entreguen links clicables limpios
-  const normalized = rawText
-    .replace(/\r\n/g, "\n")
-    .replace(/`(https?:\/\/[^\s`]+)`/gi, "$1")
-    .trim();
+  // Quitar backticks alrededor de URLs y descartar URLs comerciales/landings/TradingView que no sean repeticiones de sesión
+  const normalized = stripNonReplayUrls(
+    rawText
+      .replace(/\r\n/g, "\n")
+      .replace(/`(https?:\/\/[^\s`]+)`/gi, "$1")
+  ).trim();
   if (!normalized) return [];
 
   const rawBlocks = normalized

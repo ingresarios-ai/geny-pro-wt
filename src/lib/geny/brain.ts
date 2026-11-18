@@ -8,7 +8,11 @@ import {
   getSupabaseAdmin,
 } from "@/lib/supabase/admin";
 import { evaluateGuardrails } from "@/lib/geny/guardrails";
-import { extractReferenceUrls, searchKnowledgeContext } from "@/lib/geny/rag";
+import {
+  extractReferenceUrls,
+  searchKnowledgeContext,
+  stripNonReplayUrls,
+} from "@/lib/geny/rag";
 import { calculateMessageCostUsd } from "@/lib/geny/pricing";
 
 export interface BrainInput {
@@ -150,35 +154,40 @@ export async function runGenyBrain(input: BrainInput): Promise<BrainOutput> {
   ]);
 
   const recentTurns = (historyRes.data || []).reverse();
+  const sanitizedRagChunks = ragChunks.map((c) => ({
+    ...c,
+    content: stripNonReplayUrls(c.content),
+  }));
 
-  const hasReferenceLinks = ragChunks.some(
+  const hasReferenceLinks = sanitizedRagChunks.some(
     (c) => extractReferenceUrls(c.content).length > 0
   );
 
   const referenceLinksDirective = hasReferenceLinks
-    ? `\n\n--- INSTRUCCIÓN DE REPETICIÓN DE SESIÓN Y ENLACES DE REFERENCIA ---\n` +
-      `1. Si tu respuesta utiliza información de algún fragmento anterior que incluya un enlace de acceso, grabación o referencia (por ejemplo https://tinyurl.com/Pre..., https://tinyurl.com/Ent..., https://tinyurl.com/Pos..., Zoom, YouTube, Vimeo o script oficial de TradingView), invita de forma natural al alumno a ver la repetición de esa sesión (mencionando la sesión y su fecha, ej. "Premarket del 25/09/2026" o "Entrenamiento del 03/11/2026") compartiendo el enlace EXACTO.\n` +
-      `2. Escribe la URL en texto plano limpio (ej. https://tinyurl.com/Pre2026-09-25), SIN encerrarla en comillas invertidas (\` \`) ni corchetes, para que el alumno pueda abrirla con un toque desde su celular.\n` +
-      `3. Incluye únicamente el enlace (máximo 1 o 2) que corresponda directamente al tema consultado. JAMÁS inventes, completes ni modifiques una URL que no aparezca literalmente en los fragmentos anteriores.`
-    : "";
+    ? `\n\n--- INSTRUCCIÓN DE REPETICIÓN DE SESIÓN (SOLO GRABACIONES DE CLASE) ---\n` +
+      `1. ÚNICAMENTE cuando el alumno pregunte por un tema técnico, estrategia, activo o clase específica y uno de los fragmentos anteriores incluya el enlace de grabación/repetición de esa sesión (ej. https://tinyurl.com/Pre..., https://tinyurl.com/Ent..., https://tinyurl.com/Pos..., Zoom, YouTube o Vimeo), invítalo al final a ver la repetición mencionando la sesión y su fecha en texto plano limpio (sin comillas invertidas \` \` ni corchetes).\n` +
+      `2. PROHIBIDO compartir enlaces de TradingView (tradingview.com), páginas comerciales o landings de herramientas (como tools.ingresarios.net o ingresarios.com): quienes te escriben ya son alumnos activos y no deben ser enviados a landings externas.\n` +
+      `3. Si el alumno solo saluda o pide un resumen general de tus funciones, NO incluyas ningún enlace. JAMÁS inventes ni modifiques una URL.`
+    : `\n\n--- REGLA DE ENLACES EXTERNOS ---\n` +
+      `PROHIBIDO compartir enlaces de TradingView (tradingview.com), landings de herramientas (tools.ingresarios.net) o páginas promocionales (ingresarios.com), ya que el usuario ya es alumno activo.`;
 
   const knowledgeBlock =
-    ragChunks.length > 0
+    sanitizedRagChunks.length > 0
       ? `\n\n--- BASE DE CONOCIMIENTO OFICIAL INGRESARIOS (Usa esto con prioridad) ---\n` +
-        ragChunks
+        sanitizedRagChunks
           .map(
             (c, idx) =>
               `[Fuente ${idx + 1}: ${c.document_title} (${c.category})]\n${c.content}`
           )
           .join("\n\n") +
         referenceLinksDirective
-      : "";
+      : referenceLinksDirective;
 
   const studentContextBlock =
     `\n\n--- CONTEXTO DEL ALUMNO ---\n` +
     `Nombre: ${user.full_name || "Trader en formación"}\n` +
     `Plan: ${user.plan_tier}\n` +
-    `Canal actual: ${channel === "web" ? "GENY PRO Web" : `${channel} (responde conciso y escaneable en celular, máx 250-350 palabras salvo que pida un plan detallado)`}\n` +
+    `Canal actual: ${channel === "web" ? "GENY PRO Web" : `${channel} (responde conciso y escaneable en celular, máx 250-350 palabras salvo que pida un plan detallado; NO uses sintaxis LaTeX como $$ o \\text{}, escribe las fórmulas en texto simple legible)`}\n` +
     (user.trader_profile_summary
       ? `Resumen evolutivo del alumno: ${user.trader_profile_summary}\n`
       : "");
@@ -189,7 +198,10 @@ export async function runGenyBrain(input: BrainInput): Promise<BrainOutput> {
   const messages: CoreMessage[] = [];
   for (const turn of recentTurns) {
     messages.push({ role: "user", content: turn.user_message });
-    messages.push({ role: "assistant", content: turn.assistant_response });
+    messages.push({
+      role: "assistant",
+      content: stripNonReplayUrls(turn.assistant_response),
+    });
   }
 
   // Construir contenido multimodal del turno actual
@@ -297,9 +309,10 @@ export async function runGenyBrain(input: BrainInput): Promise<BrainOutput> {
     throw new Error("No se obtuvo respuesta del modelo de IA.");
   }
 
-  const replyText = aiResult.text
-    .trim()
-    .replace(/`(https?:\/\/[^\s`]+)`/gi, "$1");
+  const replyText = stripNonReplayUrls(
+    aiResult.text.trim().replace(/`(https?:\/\/[^\s`]+)`/gi, "$1"),
+    { allowSupportLinks: true }
+  ).trim();
   const latencyMs = Date.now() - startedAt;
 
   const tokensIn = aiResult.usage?.promptTokens ?? 0;

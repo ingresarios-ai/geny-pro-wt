@@ -26,7 +26,7 @@ REGLAS ESTRICTAS DE EXTRACCIÓN:
 2. IMÁGENES, GRÁFICOS Y DIAGRAMAS EMBEBIDOS: Cada vez que el documento contenga una imagen, captura de pantalla de TradingView, gráfico de velas, configuración de indicadores, diagrama o tabla visual, incluye un bloque claramente etiquetado:
    ### [ANÁLISIS VISUAL DE GRÁFICO / IMAGEN EN DOCUMENTO]
    Describe con precisión técnica todo lo que enseña esa imagen: qué indicador o estructura aparece, qué colores/bandas/señales se observan, qué regla operativa ilustra y qué texto o anotaciones aparecen dentro de la imagen.
-3. ENLACES DE SESIONES, REPETICIONES Y RECURSOS (OBLIGATORIO): Conserva SIEMPRE de forma literal e intacta todas las URLs y enlaces de referencia presentes en el documento (ej. grabaciones o repeticiones como https://tinyurl.com/..., Zoom, YouTube, Vimeo, Google Drive o scripts de TradingView), colocándolos justo debajo del encabezado ## de la sesión o tema correspondiente en texto plano (sin encerrar la URL en backticks \` \`).
+3. ENLACES DE REPETICIÓN DE SESIONES (SOLO GRABACIONES): Conserva de forma literal únicamente las URLs de grabaciones o repeticiones de sesiones de estudio (ej. https://tinyurl.com/Pre..., Ent..., Pos..., Zoom, YouTube o Vimeo), colocándolas debajo del encabezado ## de la sesión en texto plano (sin backticks \` \`). Omite enlaces promocionales, landings comerciales o páginas externas de TradingView.
 4. Responde únicamente con el contenido técnico en español en formato Markdown limpio, listo para ser indexado.`;
 
 async function uploadBufferToGeminiFileApi(params: {
