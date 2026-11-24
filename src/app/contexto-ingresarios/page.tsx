@@ -24,12 +24,21 @@ export default function ContextoIngresariosPlainPage() {
           <span>
             Texto simple consolidado: cliente · estrategia · brief · blueprint-webinar
           </span>
-          <a
-            href="/contexto-ingresarios.txt"
-            className="font-medium text-neutral-800 underline hover:text-black"
-          >
-            Abrir versión .txt puro
-          </a>
+          <div className="flex flex-wrap items-center gap-4">
+            <a
+              href="/contexto-ingresarios.pdf"
+              download="contexto-ingresarios.pdf"
+              className="font-semibold text-neutral-900 underline hover:text-black"
+            >
+              Descargar PDF
+            </a>
+            <a
+              href="/contexto-ingresarios.txt"
+              className="font-medium text-neutral-700 underline hover:text-black"
+            >
+              Abrir versión .txt puro
+            </a>
+          </div>
         </div>
         <pre className="whitespace-pre-wrap break-words font-sans text-[15px] leading-relaxed text-neutral-900">
           {plainText}
