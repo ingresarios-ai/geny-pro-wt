@@ -8,7 +8,7 @@ import {
 import { normalizePhoneE164 } from "@/lib/auth/device-gate";
 
 export async function syncPaymentMembershipEvent(params: {
-  provider: "whop" | "stripe" | "hotmart";
+  provider: "whop" | "stripe" | "hotmart" | "ghl";
   eventType: string;
   externalEventId?: string | null;
   email: string;
@@ -17,15 +17,19 @@ export async function syncPaymentMembershipEvent(params: {
   nextStatus: MembershipStatus;
   planTier?: PlanTier;
   expiresAt?: string | null;
+  adminNotes?: string | null;
+  forceReactivate?: boolean;
+  forcePhoneUpdate?: boolean;
   externalIds?: {
     whop_user_id?: string | null;
     whop_membership_id?: string | null;
     stripe_customer_id?: string | null;
     stripe_subscription_id?: string | null;
     hotmart_subscriber_code?: string | null;
+    ghl_contact_id?: string | null;
   };
   rawPayload: Record<string, unknown>;
-}): Promise<{ userId: string | null }> {
+}): Promise<{ userId: string | null; statusApplied: MembershipStatus }> {
   const supabase = getSupabaseAdmin();
   const cleanEmail = params.email.trim().toLowerCase();
 
@@ -35,9 +39,9 @@ export async function syncPaymentMembershipEvent(params: {
     .eq("email", cleanEmail)
     .maybeSingle<GenyUser>();
 
-  // Si un administrador suspendió manualmente la cuenta, respetamos la suspensión manual
+  // Si un administrador suspendió manualmente la cuenta, respetamos la suspensión salvo que se pida forceReactivate explícito
   const statusToApply: MembershipStatus =
-    existing?.membership_status === "suspended"
+    existing?.membership_status === "suspended" && !params.forceReactivate
       ? "suspended"
       : params.nextStatus;
 
@@ -54,7 +58,7 @@ export async function syncPaymentMembershipEvent(params: {
       billing_source: params.provider as BillingSource,
       updated_at: nowIso,
     };
-    if (params.fullName && !existing.full_name) {
+    if (params.fullName && (!existing.full_name || params.provider === "ghl")) {
       updateData.full_name = params.fullName;
     }
     if (params.planTier) {
@@ -63,8 +67,15 @@ export async function syncPaymentMembershipEvent(params: {
     if (params.expiresAt !== undefined) {
       updateData.expires_at = params.expiresAt;
     }
-    // Pre-vincular WhatsApp solo si la ficha aún no tenía número vinculado
-    if (normalizedPhone && !existing.whatsapp_phone) {
+    if (params.adminNotes && !existing.admin_notes) {
+      updateData.admin_notes = params.adminNotes;
+    }
+    if (statusToApply === "active" && params.forceReactivate) {
+      updateData.suspended_reason = null;
+      updateData.suspended_at = null;
+    }
+    // Pre-vincular WhatsApp si la ficha aún no tenía número (o si GHL fuerza actualización explícita)
+    if (normalizedPhone && (!existing.whatsapp_phone || params.forcePhoneUpdate)) {
       updateData.whatsapp_phone = normalizedPhone;
       updateData.whatsapp_bound_at = nowIso;
     }
@@ -83,6 +94,7 @@ export async function syncPaymentMembershipEvent(params: {
       membership_status: statusToApply,
       billing_source: params.provider,
       expires_at: params.expiresAt ?? null,
+      ...(params.adminNotes ? { admin_notes: params.adminNotes } : {}),
       ...(normalizedPhone
         ? { whatsapp_phone: normalizedPhone, whatsapp_bound_at: nowIso }
         : {}),
@@ -108,6 +120,6 @@ export async function syncPaymentMembershipEvent(params: {
     raw_payload: params.rawPayload,
   });
 
-  return { userId };
+  return { userId, statusApplied: statusToApply };
 }
 

@@ -4,7 +4,13 @@ import type { AiPricingConfig } from "@/lib/geny/pricing";
 export type ChannelType = "telegram" | "whatsapp" | "web";
 export type MembershipStatus = "active" | "past_due" | "canceled" | "suspended";
 export type PlanTier = "reto" | "mensual" | "anual" | "vip" | "equipo";
-export type BillingSource = "whop" | "stripe" | "hotmart" | "csv" | "manual";
+export type BillingSource =
+  | "whop"
+  | "stripe"
+  | "hotmart"
+  | "ghl"
+  | "csv"
+  | "manual";
 
 export const MANAGED_SECRET_KEYS = [
   "GOOGLE_GENERATIVE_AI_API_KEY",
@@ -18,6 +24,7 @@ export const MANAGED_SECRET_KEYS = [
   "WHATSAPP_PHONE_NUMBER_ID",
   "WHATSAPP_ACCESS_TOKEN",
   "WHATSAPP_VERIFY_TOKEN",
+  "GHL_WEBHOOK_SECRET",
   "WHOP_WEBHOOK_SECRET",
   "STRIPE_WEBHOOK_SECRET",
   "HOTMART_HOTTOK",
@@ -73,6 +80,7 @@ export interface GenyUser {
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
   hotmart_subscriber_code: string | null;
+  ghl_contact_id: string | null;
   expires_at: string | null;
   suspended_reason: string | null;
   suspended_at: string | null;

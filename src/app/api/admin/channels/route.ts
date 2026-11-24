@@ -73,6 +73,7 @@ export async function GET(req: NextRequest) {
     webhooks: {
       telegram: `${origin}/api/webhooks/telegram`,
       whatsapp: `${origin}/api/webhooks/whatsapp`,
+      ghl: `${origin}/api/webhooks/ghl`,
       whop: `${origin}/api/webhooks/whop`,
       stripe: `${origin}/api/webhooks/stripe`,
       hotmart: `${origin}/api/webhooks/hotmart`,
@@ -81,6 +82,7 @@ export async function GET(req: NextRequest) {
       telegramToken: Boolean(telegramToken),
       telegramSecret: Boolean(telegramSecret),
       whatsappVerifyToken,
+      ghlSecret: Boolean(process.env.GHL_WEBHOOK_SECRET),
       whopSecret: Boolean(process.env.WHOP_WEBHOOK_SECRET),
       stripeSecret: Boolean(process.env.STRIPE_WEBHOOK_SECRET),
       hotmartHottok: Boolean(process.env.HOTMART_HOTTOK),

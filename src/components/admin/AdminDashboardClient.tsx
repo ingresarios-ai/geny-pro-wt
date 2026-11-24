@@ -89,6 +89,7 @@ interface ChannelsPayload {
   webhooks: {
     telegram: string;
     whatsapp: string;
+    ghl: string;
     whop: string;
     stripe: string;
     hotmart: string;
@@ -97,6 +98,7 @@ interface ChannelsPayload {
     telegramToken: boolean;
     telegramSecret: boolean;
     whatsappVerifyToken: string;
+    ghlSecret: boolean;
     whopSecret: boolean;
     stripeSecret: boolean;
     hotmartHottok: boolean;
@@ -2470,7 +2472,8 @@ export default function AdminDashboardClient() {
                     }
                     className="rounded-lg border border-white/10 bg-[#07090F] px-2.5 py-1 font-mono text-[11px] text-slate-200"
                   >
-                    <option value="all">Todos (Whop / Stripe / Hotmart / Manual)</option>
+                    <option value="all">Todos (GHL / Whop / Stripe / Hotmart / Manual)</option>
+                    <option value="ghl">Solo GoHighLevel (GHL)</option>
                     <option value="whop">Solo Whop</option>
                     <option value="stripe">Solo Stripe</option>
                     <option value="hotmart">Solo Hotmart</option>
@@ -3670,20 +3673,25 @@ export default function AdminDashboardClient() {
               </div>
             </div>
 
-            {/* Tarjeta 3: Pasarelas de Pago (Whop, Stripe, Hotmart) */}
+            {/* Tarjeta 3: CRM y Pasarelas de Pago (GoHighLevel, Whop, Stripe, Hotmart) */}
             <div className="glass-panel rounded-3xl p-6">
               <div className="border-b border-white/10 pb-4">
                 <h2 className="text-lg font-bold text-white">
-                  3. Webhooks de Pasarelas de Pago (Alta y Suspensión Automática)
+                  3. Webhooks de Automatización y Pasarelas (GHL, Whop, Stripe, Hotmart)
                 </h2>
                 <p className="mt-0.5 text-xs text-slate-400">
-                  Pega estos endpoints en tus pasarelas para activar o suspender
-                  miembros automáticamente en tiempo real.
+                  Pega estos endpoints en tus workflows de GoHighLevel o pasarelas para dar de alta, renovar o cancelar miembros automáticamente en tiempo real.
                 </p>
               </div>
 
-              <div className="mt-5 grid gap-4 md:grid-cols-3">
+              <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 {[
+                  {
+                    name: "GoHighLevel (GHL)",
+                    path: "/api/webhooks/ghl",
+                    envName: "GHL_WEBHOOK_SECRET",
+                    ok: channelsInfo.secretsConfigured.ghlSecret,
+                  },
                   {
                     name: "Whop",
                     path: "/api/webhooks/whop",
@@ -3930,8 +3938,13 @@ export default function AdminDashboardClient() {
                   },
                   {
                     groupTitle:
-                      "4. Pasarelas de Pago (Whop, Stripe y Hotmart)",
+                      "4. Automatización CRM y Pasarelas de Pago (GHL, Whop, Stripe y Hotmart)",
                     items: [
+                      {
+                        key: "GHL_WEBHOOK_SECRET" as ManagedSecretKey,
+                        label: "GoHighLevel (GHL) Webhook Secret",
+                        hint: "Llave secreta para Workflows de GHL (x-ghl-secret o ?secret=...)",
+                      },
                       {
                         key: "WHOP_WEBHOOK_SECRET" as ManagedSecretKey,
                         label: "Whop Webhook Secret",
