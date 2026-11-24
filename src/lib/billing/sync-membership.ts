@@ -6,6 +6,7 @@ import {
   getSupabaseAdmin,
 } from "@/lib/supabase/admin";
 import { normalizePhoneE164 } from "@/lib/auth/device-gate";
+import { sendMemberWelcomeEmail } from "@/lib/auth/email-otp";
 
 export async function syncPaymentMembershipEvent(params: {
   provider: "whop" | "stripe" | "hotmart" | "ghl";
@@ -20,6 +21,7 @@ export async function syncPaymentMembershipEvent(params: {
   adminNotes?: string | null;
   forceReactivate?: boolean;
   forcePhoneUpdate?: boolean;
+  sendWelcomeEmail?: boolean;
   externalIds?: {
     whop_user_id?: string | null;
     whop_membership_id?: string | null;
@@ -29,7 +31,11 @@ export async function syncPaymentMembershipEvent(params: {
     ghl_contact_id?: string | null;
   };
   rawPayload: Record<string, unknown>;
-}): Promise<{ userId: string | null; statusApplied: MembershipStatus }> {
+}): Promise<{
+  userId: string | null;
+  statusApplied: MembershipStatus;
+  welcomeEmailSent: boolean;
+}> {
   const supabase = getSupabaseAdmin();
   const cleanEmail = params.email.trim().toLowerCase();
 
@@ -120,6 +126,23 @@ export async function syncPaymentMembershipEvent(params: {
     raw_payload: params.rawPayload,
   });
 
-  return { userId, statusApplied: statusToApply };
+  // Enviar correo automático de bienvenida cuando es un alta nueva o cuando se reactiva una membresía inactiva
+  const shouldSendWelcome =
+    statusToApply === "active" &&
+    params.sendWelcomeEmail !== false &&
+    (!existing ||
+      existing.membership_status !== "active" ||
+      params.sendWelcomeEmail === true);
+
+  let welcomeEmailSent = false;
+  if (shouldSendWelcome) {
+    const emailRes = await sendMemberWelcomeEmail({
+      to: cleanEmail,
+      fullName: params.fullName || existing?.full_name || null,
+    });
+    welcomeEmailSent = emailRes.delivered;
+  }
+
+  return { userId, statusApplied: statusToApply, welcomeEmailSent };
 }
 

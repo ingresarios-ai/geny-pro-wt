@@ -4,9 +4,11 @@ import {
   GenyUser,
   MembershipStatus,
   PlanTier,
+  getGenySettings,
   getSupabaseAdmin,
 } from "@/lib/supabase/admin";
 import { normalizePhoneE164 } from "@/lib/auth/device-gate";
+import { sendMemberWelcomeEmail } from "@/lib/auth/email-otp";
 
 function getOneMonthFromNowIso(): string {
   const d = new Date();
@@ -66,6 +68,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  await getGenySettings();
   const supabase = getSupabaseAdmin();
   const body = (await req.json()) as {
     mode?: "single" | "csv";
@@ -153,14 +156,23 @@ export async function POST(req: NextRequest) {
     ? normalizePhoneE164(body.whatsapp_phone)
     : null;
 
+  const cleanEmail = body.email.trim().toLowerCase();
+  const { data: existingBefore } = await supabase
+    .from("geny_users")
+    .select("id, membership_status")
+    .eq("email", cleanEmail)
+    .maybeSingle<{ id: string; membership_status: MembershipStatus }>();
+
+  const nextStatus: MembershipStatus = body.membership_status || "active";
+
   const { data, error } = await supabase
     .from("geny_users")
     .upsert(
       {
-        email: body.email.trim().toLowerCase(),
+        email: cleanEmail,
         full_name: body.full_name?.trim() || null,
         plan_tier: selectedPlan,
-        membership_status: body.membership_status || "active",
+        membership_status: nextStatus,
         billing_source: "manual",
         expires_at: expResolution.expiresAtIso,
         admin_notes: body.admin_notes?.trim() || null,
@@ -179,6 +191,16 @@ export async function POST(req: NextRequest) {
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+
+  if (
+    nextStatus === "active" &&
+    (!existingBefore || existingBefore.membership_status !== "active")
+  ) {
+    await sendMemberWelcomeEmail({
+      to: cleanEmail,
+      fullName: body.full_name?.trim() || null,
+    });
   }
 
   return NextResponse.json({ ok: true, user: data });

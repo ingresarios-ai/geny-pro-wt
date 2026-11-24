@@ -341,6 +341,16 @@ export async function POST(req: NextRequest) {
     merged.force_update_phone === true ||
     asCleanString(merged.force_update_phone).toLowerCase() === "true";
 
+  const explicitWelcomeRaw = asCleanString(
+    merged.send_welcome_email ?? merged.welcome_email
+  ).toLowerCase();
+  const sendWelcomeEmail =
+    explicitWelcomeRaw === "true"
+      ? true
+      : explicitWelcomeRaw === "false"
+        ? false
+        : undefined;
+
   // Ocultar el secreto antes de guardar auditoría en geny_payment_events
   const sanitizedRawPayload: Record<string, unknown> = { ...payload };
   delete sanitizedRawPayload.secret;
@@ -373,6 +383,7 @@ export async function POST(req: NextRequest) {
     adminNotes,
     forceReactivate,
     forcePhoneUpdate,
+    sendWelcomeEmail,
     externalIds: {
       ghl_contact_id: ghlContactId,
     },
@@ -387,5 +398,6 @@ export async function POST(req: NextRequest) {
     plan_tier: planTier ?? "reto",
     membership_status: synced.statusApplied,
     expires_at: expiresAt ?? null,
+    welcome_email_sent: synced.welcomeEmailSent,
   });
 }
