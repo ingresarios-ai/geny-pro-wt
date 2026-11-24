@@ -1,0 +1,736 @@
+========================================================================
+DOCUMENTO 1: CLIENTE (cliente.md)
+========================================================================
+
+Nota: Importado 2026-11-02 desde el cliente.md que Dillan usa en su otro sistema de agentes. Las rutas que menciona (proyectos-pasados/..., proyectos-actuales/..., ../../Copies - Anuncios/..., informacion/blueprint-blackfriday-2026.md, la sección 4 del Claude.md) NO existen en este proyecto. Para Boost Agency, el resumen operativo está en brief.md; este archivo es la fuente detallada del cliente.
+
+CLIENTE — Ingresarios
+
+Producto gratuito (funnel de entrada)
+- Nombre: Taller Aprende a Invertir desde Cero: Domina el Juego Mental del Dinero
+- Formato: 10 clases gratuitas.
+- Promesa: (pendiente — no se ha definido aún el copy de promesa del gratuito, preguntar antes de escribir Adquisición/Countdown/Consumo)
+- Función: es la puerta de entrada del lanzamiento. Aquí es donde apuntan las etapas de Adquisición (registro), Countdown (recordatorio) y Consumo (ver clases) — nunca al curso pago.
+- Guiones de Adquisición vigentes: proyectos-pasados/2026-08-taller-domina-juego-mental/domina-juego-mental-dinero.md.
+- Regla de ángulo: sigue aplicando la "Regla de ángulo obligatoria" de abajo (claridad/consistencia/ejecución, nunca "gana dinero").
+
+Fechas y mecánica de la edición§ ago26 (registrado 2026-07-28)
+
+- Fechas del taller: del 3 al 17 de agosto de 2026 (10 clases).
+- Destino de Countdown y Consumo: YouTube — confirmado por Dillan el 2026-07-28. Countdown → Clase #1 en YouTube (transmisión programada ⇒ CTA de suscripción + campanita, nunca "míralo ahora"). Consumo → cada clase publicada + playlist completa.
+⚠️ Esto contradice la Versión 7 (2026-07-13) de proyectos-pasados/2026-08-taller-domina-juego-mental/ads-corredor-polaco-fase2-2026-08.md, que había registrado el paso de YouTube a sesiones en vivo por Zoom + página de agenda. Ambos destinos están documentados como vigentes en la misma ventana de fechas — unificar con el equipo antes de pautar. Mientras tanto: Corredor Polaco Fase 2 → página de agenda; Countdown y Consumo → YouTube.
+- Estructura de la etapa de Consumo (registrado 2026-07-28): en Ingresarios la etapa de Consumo se divide en dos fases, no en una sola tanda de clases:
+  - Fase 1 — semana de live: ads a las clases en vivo/publicadas. Reparto usado: 1 ad para Clase 1, 1 para Clase 2, 1 para Clase 3, y el resto del tráfico directo a la playlist completa.
+  - Fase 2 — semana de PLC: ads a los PLC (Product Launch Content, metodología de Jeff Walker) — PLC1 (la oportunidad), PLC2 (la transformación), PLC3 (la experiencia) + playlist de los 3. 🚨 El ad del PLC3 sigue siendo Consumo, no Venta: su trabajo es que vean el video, no que compren — cero precio, bonos, garantía o entregables.
+- Guiones de Countdown y Consumo vigentes: proyectos-pasados/2026-08-taller-domina-juego-mental/scripts-countdown-consumo-2026-07-28.md (Meta) y proyectos-pasados/2026-08-taller-domina-juego-mental/scripts-consumo-fase2-youtube-2026-08-10.md (YouTube Ads, Consumo Fase 2 / PLC, modo repetición — 5 piezas: P1-YT, P2-YT, P3-YT, P-PL-A-YT, P-PL-B-YT).
+- Modo repetición (confirmado por Dillan 2026-08-10): para la Fase 2 el contenido ya está publicado (el vivo pasó), así que en esos ads el CTA correcto es "míralo ahora" y no la mecánica de suscripción + campanita del Countdown.
+
+Títulos reales de las clases (aportados por Dillan 2026-08-03)
+
+Día  |  Título
+1  |  La Anatomía del Saboteador
+2  |  Cuenta Abierta: El Espejo de la Mente
+3  |  El Plan que Tu Saboteador No Puede Renegociar
+4  |  Ejecución con Inteligencia Artificial (Conoce a GENY)
+5  |  La Bitácora del Saboteador
+6  |  Evaluación y Métrica: Reditum Sniper
+7  |  MASTERCLASS: Mente · Sistema · Entorno
+
+Todos los títulos cierran con el sufijo | El Juego Mental del Dinero. El eje narrativo del taller es "el saboteador" — el patrón interno que se activa en el momento de ejecutar. Conecta directo con el ángulo "Flow Lab / el estado con el que ejecutas" y con la Regla de ángulo obligatoria (claridad/consistencia/ejecución, nunca "gana dinero"). GENY (IA de ejecución) y Reditum Sniper aparecen como contenido de clase gratuita, así que se pueden nombrar en Countdown/Consumo sin romper la regla de oro.
+
+⚠️ Conflicto abierto — 7 días vs. 10 clases (2026-08-03): los títulos van de Día 1 a Día 7, pero este archivo y todo el lote de Countdown ya pautado dicen 10 clases (3–17 ago). Confirmar la cifra real con el equipo. Mientras tanto, los copies de Consumo Fase 1 (../../Copies - Anuncios/Ingresarios-launch-ago26/copies-consumo-fase1-2026-08-03.md) evitan el número a propósito ("la formación completa", "todas las clases").
+
+Contenido de los PLC (Fase 2)
+
+PLC  |  Título  |  Eje
+PLC1  |  LA OPORTUNIDAD — DE INFORMACIÓN A SISTEMA (confirmado 2026-08-10)  |  El salto que casi nadie da: la información no se convierte sola en decisiones; lo que la convierte es un sistema (orden fijo para saber qué mirar, qué descartar y qué hacer cuando el mercado va en contra). Conecta directo con el testimonio de Robinson (#3, exceso de información) y con la Regla de ángulo (criterio, no "gana dinero").
+PLC2  |  Construir una decisión (confirmado 2026-08-10)  |  Cómo se arma una decisión completa con ese sistema, de principio a fin: qué se mira primero, qué se descarta, en qué momento se entra y qué se hace cuando el mercado no responde como se esperaba. Calza con el testimonio de Mario (#1, "filtrar la información, seguir el método, tener un plan").
+PLC3  |  La transformación (confirmado 2026-08-10)  |  En quién te conviertes cuando decides con sistema: cómo cambia tu semana, cuánto tiempo toma de verdad, qué pasa cuando el mercado va en contra. Es transformación de criterio y ejecución, nunca de dinero — engancha con el ángulo Flow Lab ("el estado con el que ejecutas").
+
+Arco narrativo de la Fase 2: tienes información pero no un sistema (PLC1) → así se construye una decisión con ese sistema (PLC2) → en quién te conviertes cuando decides así (PLC3).
+
+⚠️ Roles cruzados en el lote viejo de Meta: en proyectos-pasados/2026-08-taller-domina-juego-mental/scripts-countdown-consumo-2026-07-28.md el P2 se escribió como "la transformación" y el P3 como "la experiencia". Con lo confirmado el 2026-08-10 esos roles quedaron desalineados — ese lote hay que reescribirlo antes de grabarlo. El lote de YouTube (proyectos-pasados/2026-08-taller-domina-juego-mental/scripts-consumo-fase2-youtube-2026-08-10.md) ya está alineado. Cargarlo aquí en cuanto Dillan lo pase. Los marcadores [TEMA CLASE N — A CONFIRMAR] de los guiones C1, C2 y C3 ya se pueden reemplazar por los títulos de la tabla de arriba.
+
+Producto (pago)
+- Nombre: Ingresarios (marca) — nombre específico del programa pago por confirmar
+- Tipo: Curso / entrenamiento de trading con acompañamiento y comunidad ("Tribu Ingresarios")
+- Precio: Regular $1,897 USD · Final $1,497 USD (solo para uso en etapa de VENTA)
+- Mecanismo único: "Flow de Inversionista" — triple plataforma teórica, práctica y tecnológica para construir una máquina de ingresos inmune a las crisis económicas en los primeros 6 meses, sin depender de gurús, brokers ni agentes externos.
+
+Tecnología del mecanismo único (registrado 2026-07-07)
+
+Cómo se compone en la práctica el "Flow de Inversionista":
+- Teórica → Academia integrada dentro de la app (ver abajo).
+- Práctica → Experiencia gamificada + indicadores/estrategias propios (ver abajo).
+- Tecnológica → App con IA (ver abajo).
+
+Esta tecnología es material válido para hablar de valor gratis y del mecanismo único sin vender en Relevancia/Corredor Polaco, Adquisición, Countdown y Consumo — es la forma concreta de mostrar "cómo lo hacemos" sin mencionar precio ni entregables del programa pago.
+
+⚠️ Filosofía del sistema — conecta directo con la "Regla de ángulo obligatoria" de arriba (registrado 2026-07-10): la tecnología NO da señales de compra/venta — ayuda a pensar y documentar el proceso de decisión. El sistema no premia adivinar el mercado, premia ejecutar bien. Este framing es clave para el copy: refuerza que la promesa no es "la IA te dice cuándo ganar dinero", sino "la IA te ayuda a pensar con claridad y a documentar/ejecutar tu plan de forma consistente". Úsalo para diferenciar de la competencia, que sí vende "señales" o "bots que operan por ti".
+
+Estructura del taller — 5 fases (Día 5 = "Flow Lab", registrado 2026-07-10): el mecanismo se enseña/revela en 5 fases (ver también "taller intensivo de 5 fases" en Historial de lanzamientos). El Día 5 es el "WOW" del taller — Flow Lab: gestión del estado emocional antes de operar, no una estrategia técnica más. Es un ángulo de hook potente y poco explotado en el nicho — la mayoría de la competencia solo habla de indicadores/estrategias, nunca del estado mental de quien ejecuta. Hook ganador sugerido: "¿Y si el problema no es tu estrategia, sino tu estado cuando ejecutas?" Usar este ángulo en Relevancia/Adquisición como cápsula de conocimiento o intriga (open loop) sin revelar el contenido completo del Día 5 — es material de reveal, no de venta anticipada.
+
+📱 Plataforma principal — App con IA:
+- App gamificada que integra inteligencia artificial para crear una experiencia inmersiva de inversión (aprender haciendo, no solo viendo videos).
+
+🤖 Mentor IA "Geny" (en este archivo y en las transcripciones aparecía como "Jenny"; Dillan confirmó el 2026-11-02 que el nombre correcto es Geny):
+- Acompaña el aprendizaje del usuario y da orientación personalizada según su nivel (principiante u operador experimentado).
+- Los usuarios pueden conversar con la IA en tiempo real para resolver dudas.
+
+🎮 Experiencia gamificada:
+- El aprendizaje se vive como un juego interactivo: acciones, feedback inmediato, sistema de puntuación y logros para mantener el engagement.
+- Activo visual para creativos (registrado 2026-07-10): las pantallas del wireframe de la app (racha 🔥, barra de progreso, reconocimientos/logros) son un asset de producto muy vendible — úsalas como creativo de imagen/video (screen recordings, mockups) para mostrar "acompañamiento" de forma tangible en vez de solo prometerlo con palabras. Válido para Relevancia/Corredor Polaco y Adquisición (es UI del producto gratuito de la app, no un entregable del curso pago).
+
+🧠 Análisis inteligente de finanzas:
+- Reconocimiento de patrones de gasto (identifica automáticamente cómo gasta el usuario su dinero).
+- "Termostato financiero": monitorea la salud financiera del usuario.
+- Análisis fundamental explicado de forma simple ("como para un niño de 10 años").
+- Gráficas educativas: visualizaciones que enseñan a leer precios y análisis de mercado.
+
+📈 Academia integrada (dentro de la app):
+- Videos educativos estructurados sobre estrategias de inversión.
+- Microclases en vivo, cortas y prácticas, directamente en la app.
+
+🔍 Indicadores y estrategias propios:
+- Geny Trend: identifica tendencias del mercado.
+- Reditum Sniper: identifica niveles clave del mercado.
+- Sniper Ultra: unificación de Geny Trend + Reditum Sniper.
+- Punto de Control: estrategia propia para decidir cuándo comprar/vender.
+- Geny Lab: otra estrategia propia para comprar/vender.
+
+Uso interno (NO usar como gancho de copy — no es un beneficio para el avatar, es información de producto/negocio):
+- Sistema de perfilamiento y tracking de uso (quién usa la app, cuándo, cómo) y métricas de engagement — sirve al equipo de producto, no es contenido de anuncio.
+- Modelo de suscripción flexible/escalable — es información de precio/negocio: solo se usa en etapa de VENTA, nunca en Relevancia/Corredor Polaco/Adquisición/Countdown/Consumo (regla de oro de la sección 4 del Claude.md).
+
+Propósito estratégico (para justificar POR QUÉ esta tecnología es el diferenciador, sin venderla):
+- Innovación constante, experiencia práctica ("aprender haciendo"), accesibilidad (explica lo complejo de forma simple), engagement (gamificación + IA), escalabilidad.
+
+Buyer Persona — Encuesta Lanzamiento Ene26 (n=1,189)
+
+Encuesta cuantitativa a leads del lanzamiento de enero 2026. Complementa (no reemplaza) el avatar cualitativo de la sección "Buyer persona / Avatar" de abajo — úsala para segmentar el copy según el nivel de ingreso del lead.
+
+Segmento Premium — $1,000+ USD/mes (35% de leads, n=418)
+
+- Quién es: Hombre (71%), 45–64 años (núcleo 45–54), con hijos (76%).
+- Países: Colombia 46% / USA 20% / México 15% — USA pesa el doble aquí que en la base general y crece con el ingreso.
+- Ocupación / educación: Empleado profesional (51%) o emprendedor (32%); 69% con universidad o posgrado (ingenieros, salud, docentes, contadores).
+- Experiencia: Principiante con dinero — 53% nunca ha invertido, 74% se autocalifica 0–1 de experiencia.
+- Temperatura del lead: Frío — 57% conoce la marca hace menos de 7 días.
+
+Dolores (en orden real):
+1. No sabe por dónde empezar (falta método, no ganas).
+2. El sueldo cubre pero no construye.
+3. Falta de tiempo (profesional ocupado — diferenciador clave de este segmento).
+4. Miedo a estafas / perder capital.
+5. Retiro / pensión (fuerte en el bloque 55+).
+
+Motivación real: aprender con método y poner a trabajar el dinero que YA gana. NO busca escapar de la pobreza ni riqueza rápida.
+
+Preguntas literales del avatar (usar como ángulos de hook):
+- "¿Cómo invierto sin que me estafen?"
+- "¿Cuál es tu método exacto paso a paso?"
+- "¿Cómo logro consistencia real?"
+- "Cuéntame tus errores para no cometerlos."
+
+Reglas de copy obligatorias para este segmento:
+- Ángulo central: "Ya ganás bien — aprendé a que ese dinero trabaje con método, sin depender de nadie y sin que te estafen." NUNCA "genera ingresos desde cero para salir adelante" (ese ángulo es del segmento Base, no de este).
+- Atacar el miedo a la estafa ANTES que la ambición. Transparencia radical > promesa de ganancia.
+- Ángulo de tiempo: un sistema que no exige estar pegado a la pantalla.
+- Gancho de retiro/pensión reservado para el bloque de edad 55–64.
+- Framing de familia/hijos/futuro por encima de libertad financiera aspiracional.
+- Vocabulario de profesional educado: método, estructura, proceso auditado. Cero slang de trader joven — el avatar es un ingeniero de 50 años, no un joven que quiere ser trader.
+
+Segmento Base — $500–999 USD/mes (25% de leads)
+
+- Dolor dominante: capital mínimo e ingreso insuficiente.
+- Ángulo: accesibilidad y primer paso.
+
+⚠️ No mezclar ángulos de los dos segmentos en un mismo ad. El ángulo "ya ganás bien, hacé que ese dinero trabaje" (Premium) y el ángulo "accesibilidad/primer paso" (Base) responden a dolores distintos y se diluyen si se combinan.
+
+Buyer persona / Avatar
+- Quién es: 85% hombres / 15% mujeres, 30–65 años. Colombia (mayormente), también México y Estados Unidos. Ingresos entre $600 y $2,500 USD/mes. Nivel educativo: desde profesional incompleto/completo hasta doctorados.
+- Dolor principal: Falta de conocimiento para invertir, falta de dinero/capital para empezar, falta de tiempo para aprender u operar, falta de disciplina emocional, necesidad de estabilidad financiera y deseo de ganar más dinero. También pesa la responsabilidad con la familia.
+- Miedo principal: Perder más dinero; que este curso sea "otro más que no funciona"; no ser capaz; no entender la estrategia; que el mercado lo siga castigando; que su pareja/familia lo critique si vuelve a fallar; quedarse atrapado en el mismo ciclo; no lograr una cuenta fondeada.
+- Sueño / resultado deseado: Libertad financiera e independencia (no depender de un jefe ni de un salario fijo); ingreso extra estable; operar con confianza y sin emociones; obtener una cuenta fondeada; dejar de improvisar y seguir un plan.
+- Creencia central que hay que romper: Que ya "lo intentó todo" y los cursos de trading no funcionan para él, o que necesita ser un experto para poder invertir.
+- Qué ya intentó y le falló: Ha comprado otros cursos de trading que no le sirvieron ("He comprado cursos y no me han servido").
+
+Perfil psicológico ampliado
+- Intereses: Trading (Forex, índices, criptos), mejorar ingresos y estilo de vida, emprendimiento digital, automatización/bots/sistemas, crecimiento personal y disciplina, creadores de contenido de trading (YouTube, TikTok, IG), influencers financieros.
+- Valores: Libertad financiera, independencia, disciplina y mejora continua, responsabilidad por sus resultados, ambición por escalar y crecer.
+- Rasgos de personalidad: Ambicioso (quiere resultados, no perder el tiempo); analítico pero no experto (entiende conceptos pero necesita un sistema concreto); impulsivo con decisiones de compra cuando siente que encontró la solución; poco tolerante a la frustración (se molesta si no ve resultados); le gusta seguir pasos claros (plantillas, sistemas, reglas); busca guía, dirección y estructura; sueña con libertad pero se siente estancado.
+
+Objeciones frecuentes
+- "He comprado cursos y no me han servido."
+- "No quiero perder más dinero."
+- "¿Esto realmente funciona?"
+- "¿Y si no soy capaz?"
+- "¿Será muy complicado?"
+- "No tengo mucho tiempo."
+
+Motivaciones
+- Aprender una estrategia concreta, probada, paso a paso.
+- Ser rentable en los próximos 3–6 meses.
+- Tener un ingreso extra estable.
+- Operar con confianza y sin emociones.
+- Obtener una cuenta fondeada.
+- Dejar de improvisar y seguir un plan.
+- Tener acompañamiento para evitar errores.
+
+⚠️ Esta lista es investigación real del avatar (incluye el deseo de dinero/ingreso). No la uses tal cual como ángulo de copy — ver la "Regla de ángulo obligatoria" en la sección "Ángulos de copy probados": el copy promete claridad/consistencia/ejecución, no la cifra de ingreso.
+
+Preguntas frecuentes (anticipar en copy de Venta)
+1. ¿Cuánto tiempo me tomará ver resultados?
+2. ¿Necesito experiencia previa?
+3. ¿Qué pasa si no entiendo algo?
+4. ¿Cuánto tiempo debo dedicarle por semana?
+5. ¿El sistema funciona para cualquier mercado?
+8. ¿Puedo ir a mi ritmo?
+9. ¿Qué diferencia este curso de todos los demás?
+10. ¿Puedo empezar con una cuenta pequeña?
+11. ¿Aprenderé a conseguir una cuenta fondeada?
+12. ¿Qué pasa si no logro resultados?
+
+Numeración tal cual la dio el cliente (saltos en 6 y 7 — confirmar si faltan preguntas antes de usarlas en copy).
+
+Ángulos de copy probados
+
+⭐ Activo #1 de la marca (registrado 2026-09-16, indicación directa de Dillan): lo más fuerte que tiene Ingresarios para mostrar son los resultados generados y los de sus estudiantes — +10.000 estudiantes en la Academia, +18 años entrenando traders, +3 décadas operando. Priorizá este material por encima de hooks conceptuales cuando tengas que elegir.
+
+Cómo se usa sin romper la Regla de ángulo obligatoria (de abajo): la prueba que se muestra es institucional y de criterio — cuánta gente ha pasado por la academia, cuántos años lleva, qué cambió en la ejecución del alumno (venció el miedo, opera en real, sigue un plan) — nunca cifras de cuenta ni de cash flow del alumno. El número de estudiantes es el mejor activo disponible justamente porque es un resultado que no es una cifra de dinero: prueba sin prometer. Por eso el testimonio de Mario (cuenta >$300K, cash flow $15–25K/mes) solo se usa recortado antes de las cifras, mientras que Robinson y Kenia se pueden usar completos.
+
+⚠️ Regla de ángulo obligatoria (registrado 2026-07-10): el ángulo ganador NO es "gana dinero". Dillan fue explícito: la meta del copy no puede ser prometer ganar dinero — ni como headline, ni como hook, ni como CTA. El copy debe atacar claridad, consistencia y ejecución: la promesa es que la persona va a dejar de operar a ciegas/improvisando y va a tener un sistema claro que puede ejecutar de forma consistente — el dinero es una consecuencia implícita, nunca la promesa explícita. Esto aplica a todas las etapas (Relevancia, Adquisición, Countdown, Consumo, y por defecto también Venta salvo indicación contraria). Evita frases tipo "gana $X al mes", "genera ingresos extra", "ingreso extra estable" como promesa central de un hook o headline — en vez de eso usa variantes como "por fin vas a operar con claridad", "deja de improvisar, seguí un plan", "consistencia real en tus decisiones", "ejecutá sin dudar cada vez que entrás al mercado". Nota: el avatar SÍ menciona el dinero como dolor/motivación de fondo (ver "Buyer persona / Avatar" abajo) — eso es información real del avatar, pero el ángulo de copy no debe convertir ese dolor en la promesa explícita del anuncio.
+
+- Idea central de la marca: Activar tu "Flow de Inversionista" y construir una máquina de ingresos inmune a las crisis económicas en los primeros 6 meses, sin depender de gurús, brokers ni agentes externos. (Nota: al redactar esta idea en copy, tradúcela a claridad/consistencia/ejecución — no a la cifra de ingresos, ver regla de ángulo arriba.)
+- Hooks ganadores: registrados en ganadores.md (7 guiones ganadores analizados el 2026-07-05) — patrones destacados: reencuadre "no es falta de capital/mercado, es el sistema", metáfora física demostrada en cámara (estantería/arquitectura), mito de la libertad financiera de lujo vs. realidad silenciosa, analogía de aprender a andar en bicicleta, testimonio insertado a mitad de guion, transparencia radical ("ves lo que normalmente no se muestra"), y presentador con autoridad de vida en primera persona.
+- Diferenciador vs. competencia: No depende de gurús, brokers ni agentes externos; combina plataforma teórica + práctica + tecnológica (triple sistema), no solo teoría.
+- Ángulo de tribu/pertenencia (registrado 2026-07-10): "No enfrentas esto solo" — ángulo emocional fuerte y poco explotado en el nicho (la competencia vende resultados individuales o al gurú, no comunidad). Ya existe el activo real para sostenerlo: la comunidad "Tribu Ingresarios" (ver Oferta abajo). Usar este ángulo en Relevancia (identidad de comunidad, ya listado en Claude.md como ángulo del Corredor Polaco) y en Adquisición/Venta como contraste directo con la soledad/aislamiento de operar por cuenta propia sin acompañamiento. Combina bien con el activo visual de la app (racha, progreso, reconocimientos) para mostrar acompañamiento tangible, no solo decirlo.
+
+Oferta (solo etapa de VENTA)
+- Qué incluye: Entrenamiento completo + audios + material de trabajo + acompañamiento + comunidad "Tribu Ingresarios".
+- Precio regular: $1,897 USD
+- Precio final: $1,497 USD
+- Downsell: "Yo Invierto" — $197 USD
+- Upsell: "Capitanes" — $10,000 USD
+- Condiciones de pago (recuperación 1 a 1): pago a cuotas — 3 cuotas (monto por cuota pendiente de confirmar).
+- Regla de descuento en recuperación: si el equipo de ventas lo solicita, se puede mantener siempre el descuento de las primeras 24 horas para asegurar la venta.
+- Bonos:
+  - Lote 1: bono de $500 USD
+  - Lote 2: descuento de $400 USD
+  - Order bump: (pendiente de definir)
+- Garantías:
+  1. Garantía de 15 días: el alumno puede probar el entrenamiento, descargar audios y material de trabajo. Si en los primeros 15 días después de la compra decide que el curso no es para él, escribe a alumnos@ingresarios.com y se le devuelve el dinero de su inscripción.
+  2. Garantía de resultados (1 año): si el alumno siguió el plan, posteó su bitácora y plan de trading públicamente en la Tribu Ingresarios cada semana, participó en las clases y siguió el método, pero no tuvo resultados de balance positivo, se le reembolsa el monto de su inscripción.
+
+Etapa de VENTA — edición ago26 (registrado 2026-08-14)
+
+- Estado: el lanzamiento ya está en etapa de Venta (carrito abierto) desde el 2026-08-14 o antes. Fecha y hora exacta de cierre del carrito: pendiente de confirmar — los guiones vigentes la dejan como [DÍA DE CIERRE].
+- Nuevo destino de CTA en Venta: conversación directa por WhatsApp (campaña de Mensajes / Click to WhatsApp en Meta). El objetivo declarado por Dillan es generar conversaciones con los leads, no clic a checkout. Es distinto del "canal de WhatsApp" del Ganador #8 (lista de difusión de calentamiento en Adquisición): acá es chat 1 a 1 con el equipo de ventas.
+- Regla de precio en estos ads (confirmada por Dillan 2026-08-14): el guion no dice la cifra de precio ni de cuota. Sí puede nombrar entregables, garantías y la existencia de plan a cuotas; el número lo da el equipo dentro del chat. Esto maximiza volumen de conversaciones.
+- Segmento de este lote: mixto / avatar general (no segmentado Premium vs. Base).
+- Presentador: Juan Villegas, a cámara, 1ª persona.
+- Guiones de Venta vigentes: proyectos-pasados/2026-08-taller-domina-juego-mental/scripts-venta-whatsapp-juan-2026-08-14.md (3 piezas: AD1 prueba social/Robinson, AD2 accesibilidad/Mario, AD3 costo de no actuar + cierre/Kenia).
+- Palabra clave por ad: cada guion pide una palabra distinta en el mensaje de WhatsApp (MÉTODO / PLAN / ÚLTIMO DÍA) para atribuir qué ad genera cada conversación.
+
+Tono y países
+- Países objetivo: Colombia (mercado principal), Estados Unidos, México, Argentina, Canadá, Perú.
+- Registro/tono: Neutro LATAM, con capacidad de ajuste a registro paisa cuando el lanzamiento sea específico para Colombia.
+- Mentor/presentador: Juan Villegas — trader profesional, opera en mercados financieros a diario usando tecnología. Trayectoria (actualizada 2026-09-16): +30 años operando como trader profesional (más de tres décadas), +18 años entrenando traders en la Academia Ingresarios y +10.000 estudiantes que han pasado por la Academia (dato aportado por Dillan el 2026-09-16 — ⚠️ dejar documentada la fuente interna del número antes de pautarlo). (Nota: el Ganador #7 citaba "+10 años entrenando"; el guion ganador ago26 usa "+18 años entrenando" y "+3 décadas operando" — usar estas cifras mayores como vigentes.) Usado como presentador en formato orgánico/perfil personal (ver Ganadores #7 y #8 en ganadores.md); varios guiones ganadores usan voz de marca/comunidad en vez de presentador con nombre propio.
+
+Historial de lanzamientos
+- Cierre del Seminario de Opciones → planes /planes (registrado 2026-10-26): la clase de despedida vende los planes de reto.ingresarios.net/planes (STARTER US$69/mes·697/año · CORE US$99/mes·997/año · PRO US$159/mes·1.897/año, "más popular"; ONE US$49/mes oculto salvo ?one). En voz no se dice el precio: solo valor percibido, y el CTA es agendar llamada, donde se revelan un "súper precio" exclusivo del seminario y un "súper descuento" adicional. Pendientes: qué es el Reto 21, qué hace Sniper Cluster Vela, la mecánica del descuento, la escasez real y la garantía de estos planes. Guion: proyectos-actuales/2026-10-seminario-opciones/guion-cierre-seminario-opciones-2026-10-26.md.
+- Black November 2026 — renovación Plan PRO (registrado 2026-10-14, vigente): oferta de renovación de 12 meses de Plan PRO exclusiva para miembros de la Tribu (no aplica a Starter, Core ni Pioneros, a quienes hay que excluir del público). Landing reto.ingresarios.net/blacknovember2026 → checkout Whop + WhatsApp de asesor. El precio sube por etapas: US$499 (15–31 oct) → 549 (1–15 nov) → 599 (16–30 nov) → 699 (dic) → 799 regular desde 2027. Bonos que se van cayendo: Playbook Estrategias Vol. 1 (hasta 30 nov), Reto 1K→10K 2027 (hasta 31 dic), descuento en tiquete al próximo evento 50%→40%→30%. Súper oferta 48 h (30–31 oct): 2 años por US$999. Plan PRO incluye: 7 módulos, 40 clases grabadas, clases en vivo, Geny IA, Geny B (Bitácora Inteligente), Sniper ULTRA, Sniper Cluster Vela, nuevo POC, App Geny LAB, premercado/postmercado en vivo L–V, Tribu, Reto 21 y soporte. Es etapa de Venta, así que se puede decir el precio. Público de los ads (Dillan, 2026-10-14): 100% remarketing a ex-miembros PRO con el plan vencido (reactivación, el ángulo es "volver", no "renovar"). Pendiente confirmar que el checkout funcione para cuentas vencidas. Guiones: proyectos-actuales/2026-10-black-november/scripts-venta-black-november-2026-10-14.md (3 ads).
+- Black Friday y Cyber Monday 2026 (registrado 2026-10-26): captación de leads del 12 al 27 de noviembre, webinar el 27 de noviembre a las 7:00 p. m. hora Colombia, carrito abierto del 27 al 30 de noviembre (cierra a las 12:00 p. m. del 30), Ingresarios PRO por 6 meses a USD 897 (modalidad nueva; regular USD 1.197; PRO 12 meses USD 1.897). Bonos: seminario de opciones; Geny Express (USD 47) y Crea tu agente (USD 49) van como bono u order bump, por decidir. Geny LAB (USD 69 suelto) y GenyB Lite (USD 29) ya vienen dentro de PRO. Garantía: 15 días de reembolso; la de resultados (6 meses) está por decidir. Detalle y pendientes en informacion/blueprint-blackfriday-2026.md §0 y §4. Ojo: Black November (PRO 12 meses, hasta el 30 nov) se cruza en fechas con esta oferta.
+- Webinar GRATUITO "Avance del Reto" (60K → 100K) (registrado 2026-09-16, vigente): webinar gratuito en vivo donde Juan abre la cuenta del Reto 2K→20K — meta superada, cuenta en 60K, nueva meta 100K — y explica las decisiones detrás. Fecha y destino de registro pendientes. 🚫 Evento gratuito: aplica la regla de oro completa, y tampoco se menciona el evento pago de octubre en estos ads. Guiones: proyectos-pasados/2026-09-webinar-reto-60k-100k/scripts-adquisicion-webinar-reto-60k-100k-2026-09-16.md (6 ads, un patrón ganador distinto cada uno).
+- "El Código Secreto del Dinero" (registrado 2026-09-14, vigente): evento PAGO (hay que pagar para registrarse) · 12 al 14 de octubre de 2026 · 3 noches, online y en vivo · 5 pasos PEDEM (Planear, Ejecutar, Documentar, Evaluar, Mejorar) + estrategias + IA aplicada al análisis + Sala de Implementación práctica con el equipo. Entrada: primer lote US$29, sube en el siguiente (dato del doc de la otra agencia, pendiente de confirmar con el cliente). Como el registro es pago, en Adquisición sí se nombra el precio de la entrada, pero nunca el programa, la Sala Ingresarios ni sus entregables. Guiones: proyectos-pasados/2026-10-codigo-secreto-del-dinero/scripts-adquisicion-codigo-secreto-2026-09-14.md (tanda 1 — 6 ads, 3 sobre el Reto 2K→20K) y proyectos-pasados/2026-10-codigo-secreto-del-dinero/scripts-adquisicion-codigo-secreto-tanda2-2026-09-16.md (tanda 2 — 6 ads construidos sobre resultados propios y de alumnos: prueba social masiva, testimonio protagonista, longevidad anti-estafa, arrepentimiento anticipado, takeaway selling y reciprocidad; ninguno repite gatillo ni patrón de la tanda 1).
+- "Taller Aprende a Invertir desde Cero: Domina el Juego Mental del Dinero" (renombrado 2026-07-10, vigente): funnel gratuito de 10 clases. Guiones de Adquisición en proyectos-pasados/2026-08-taller-domina-juego-mental/domina-juego-mental-dinero.md. Fecha exacta, países y oferta de venta: pendientes de confirmar. Formato de mecanismo usado en su guion ganador: "taller intensivo" de 5 fases + tecnología algorítmica, presentado por Juan Villegas (ver Ganador #7 en ganadores.md). Sigue aplicando la "Regla de ángulo obligatoria" (claridad/consistencia/ejecución, nunca "gana dinero").
+- Curso gratuito de 10 clases — formato base reutilizado a través de varias ediciones/nombres (ver entrada de arriba); funciona como top of funnel recurrente hacia el curso pago Ingresarios.
+- Edición "Reto 2K a 20K" (histórico) — 11 clases en vivo gratuitas, arranca el 20 de abril (año a confirmar), con acceso inmediato a la plataforma para quien se registre antes de esa fecha. 6 guiones ganadores registrados en ganadores.md (Ganadores #1–6) para esta edición — parece ser el mismo funnel gratuito de varias clases renombrado/reenfocado con la mecánica "2K a 20K". Confirmar con el cliente si es la misma edición renombrada o una edición nueva independiente.
+  - Estado de la cuenta del reto (Dillan, 2026-09-14): arrancó con US$2.000, la meta era US$20.000 y ya va por US$60.000. Se usa como prueba del proceso en los ads, nunca como promesa: captura real con fecha + disclaimer en pantalla. Regla de compliance (Dillan, 2026-09-14): en guiones y copies, las cifras de la cuenta se escriben y se dicen en formato K ("de 2K a 20K", "va por 60K"), nunca "2.000 / 20.000 / 60.000 dólares" ni "miles de dólares". ✅ Conflicto resuelto (Dillan, 2026-09-16): la meta de 20K y la de 100K no se contradicen — son consecutivas. La meta original era 20K, ya se superó, la cuenta va por 60K y la meta nueva son 100K, con el reto todavía en curso. Al escribir, usá siempre ese arco de tres tiempos (meta puesta → superada → meta nueva); es el que sostiene todo el lote del webinar gratuito.
+
+
+========================================================================
+DOCUMENTO 2: ESTRATEGIA (estrategia.md)
+========================================================================
+
+Estrategia aplicada — Ingresarios · Black Friday + Cyber Monday 2026
+
+Estrategia base: Lanzamiento de 1 clase, variante megaoferta (sin bloque de enseñanza).
+Estado al 2026-11-02. Mantiene: project-manager. Fuentes: brief.md, blueprint-webinar.md, cliente.md, estado de ClickUp (lista Ingresarios 901112844291) y entregables en entregables/ingresarios-black-friday/.
+Lo que no está en esas fuentes va como [PENDIENTE]. No se mezcla la oferta de Ingresarios con ofertas o precios de otro material.
+
+1. Resumen del proyecto
+
+Elemento  |  Dato
+Evento  |  1 webinar de megaoferta, 27 nov 2026, 7:00 p. m. Colombia, por YouTube. Título: "BlackFriday - Taller aprende a Invertir desde cero"
+Captación  |  12 al 27 de noviembre (presupuesto USD 4.000, pendiente de aprobación humana del reparto)
+Calentamiento  |  Grupos de WhatsApp y email
+Carrito abierto  |  27 al 30 de noviembre; cierra el 30 nov a las 12:00 p. m. (hora Colombia, por confirmar)
+Producto  |  Ingresarios PRO 6 meses a USD 897 (regular USD 1.197; PRO 12 meses USD 1.897)
+Escasez real  |  80 cupos al Reto 21 de diciembre 2026 (los demás entran a la edición 2027 al mismo precio) y cierre del carrito el 30 nov
+Presentador  |  Juan Villegas
+Avatar  |  Segmento Premium (ingresos USD 1.000 o más)
+Aprueba por el cliente  |  Dillan
+Proyecto vecino (no mezclar)  |  Black November (renovación PRO 12 meses, 100 % remarketing). Cada campaña excluye al público de la otra
+
+2. Mapa fase -> tareas -> estado
+
+Leyenda de estado: Aprobado = aprobado por PM (falta visto bueno humano donde se indica) · Pendiente = por hacer · Bloqueado = no puede avanzar hasta que se cierre lo indicado · Sin tarea = falta crear la tarea en ClickUp.
+
+Fase  |  Fechas  |  Tarea ClickUp  |  Área  |  Vence  |  Estado hoy
+0. Preparación: cerrar pendientes del brief  |  hasta 5 nov  |  Cerrar pendientes del brief con Dillan (https://app.clickup.com/t/868mqq371) (868mqq371)  |  PM  |  5 nov  |  En progreso. Es la raíz de los bloqueos (ver sección 3)
+0. Preparación: compliance Meta y cuenta  |  hasta 6 nov  |  Revisar compliance de Meta y confirmar cuenta (https://app.clickup.com/t/868mqq374) (868mqq374)  |  Media Buying (lectura)  |  6 nov  |  Aprobado por PM. Entregable: entregables/ingresarios-black-friday/media-buying/compliance-meta-y-cuentas-blackfriday-2026-11-02.md. Quedan decisiones humanas de Dillan (sección 3)
+1. Captación: copy de anuncios  |  hasta 9 nov  |  Copy y hooks de anuncios de captación (https://app.clickup.com/t/868mqq377) (868mqq377)  |  Copy  |  9 nov  |  Aprobado por PM, pero con re-chequeo pendiente contra las reglas de copy de la sección 3.1 del compliance (el PM lo dejó anotado en 374). No pasa a Dillan hasta pasar ese re-chequeo. Entregable: entregables/ingresarios-black-friday/copy/ads-captacion-webinar-black-friday-2026-11-02.md
+1. Captación: creativos  |  hasta 11 nov  |  Creativos de los anuncios de captación (https://app.clickup.com/t/868mqq37b) (868mqq37b)  |  Audiovisual  |  11 nov  |  Pendiente. Espera guiones de 377 ya sin devoluciones
+1. Captación: registro y tracking  |  hasta 11 nov  |  Página de registro, tracking y flujo de calentamiento en GHL (https://app.clickup.com/t/868mqq37f) (868mqq37f)  |  Web  |  11 nov  |  Pendiente. El brief indica que el MCP de GHL ya está conectado (Dillan, 2 nov); confirmar. Faltan destino del CTA/registro y evento de registro del píxel
+1. Captación: campaña en Meta  |  crear en pausa; activar 12 nov con aprobación  |  Armar campaña de captación en Meta (en pausa) (https://app.clickup.com/t/868mqq37k) (868mqq37k)  |  Media Buying  |  11 nov  |  Pendiente / bloqueada: depende de copy, creativos, registro y aprobación del presupuesto. El compliance cambió su alcance (EE. UU. condicionado, exclusiones en las 3 cuentas)
+2. Calentamiento: mensajes WhatsApp y email  |  12 a 27 nov  |  Mensajes de calentamiento por WhatsApp y email (https://app.clickup.com/t/868mqq37p) (868mqq37p)  |  Copy  |  16 nov  |  Pendiente. La parte de flujos/grupos técnica está en 37f
+3. Evento: guion del webinar de megaoferta  |  27 nov  |  Guion del webinar de megaoferta (https://app.clickup.com/t/868mqq37v) (868mqq37v)  |  Copy  |  20 nov  |  Pendiente / bloqueado por pendientes del brief (stack, bonos, garantía, post-cierre) y por elegir testimonios
+3. Evento: transmisión en YouTube, diapositivas/stack slide, checkout  |  27 nov  |  Sin tarea  |  Web / Audiovisual / PM  |  [PENDIENTE]  |  Sin tarea
+4. Carrito abierto: secuencia diaria (WhatsApp/email, una objeción por día)  |  27 a 30 nov  |  Sin tarea  |  Copy / Web  |  [PENDIENTE]  |  Sin tarea
+5. Cierre: mensajes y (opcional) live de cierre  |  30 nov, 12:00 p. m.  |  Sin tarea  |  Copy / Audiovisual / Web  |  [PENDIENTE]  |  Sin tarea. Hay una duda de hora de cierre (sección 4)
+4-5. Seguimiento 1 a 1 de leads calientes  |  27 a 30 nov  |  Sin tarea  |  Setter  |  [PENDIENTE]  |  Sin tarea. El brief dice "si el cliente lo pide"; no consta que lo haya pedido
+6. Post: debriefing, encuesta a no compradores, re-open  |  desde 30 nov  |  Sin tarea  |  Data / Copy / PM  |  [PENDIENTE]  |  Sin tarea. Depende de la decisión de qué pasa tras el cierre
+Lectura de resultados (registro, asistencia, ventas)  |  12 nov en adelante  |  Sin tarea  |  Data  |  [PENDIENTE]  |  Sin tarea. KPIs sin definir
+
+Tareas sueltas históricas en la lista ("2 blocks de anuncios", "actualizar control de creativos") no pertenecen a este proyecto.
+
+3. Qué está aprobado, pendiente o bloqueado hoy
+
+Aprobado
+- Brief como borrador con decisiones de Dillan del 2 nov (garantía de 1 año + 15 días, avatar Premium, PRO 12 meses a USD 1.897, nombre "Geny", exclusión de públicos entre campañas, bonos Geny Express y Crea tu agente como bonos, "+10.000 estudiantes" = alumnos de "Aprende a invertir desde cero", presupuesto USD 4.000, MCP de GHL conectado).
+- Compliance de Meta y cuentas (374): aprobado por PM. Cuenta a usar propuesta: Colombia.
+- Copy de anuncios (377): aprobado por PM, con re-chequeo pendiente (ver tabla).
+
+Pendiente de decisión humana (Dillan) antes de gastar o publicar
+- Aprobar el reparto de los USD 4.000. Propuesta del Media Buyer (no aprobada): Colombia USD 2.000 · EE. UU. USD 900 (condicionado a compliance) · Resto USD 700 · reserva USD 400. Las cuentas están en COP: la conversión no está resuelta.
+- Texto del aviso de riesgo, dominio de la landing, cuenta de Instagram, verificación financiera en Business Suite.
+- Confirmar si el registro al webinar tiene costo (el copy ya no lo afirma).
+- Destino del CTA y de la página de registro.
+- Visto bueno final de los anuncios y activación el 12 nov.
+
+Bloqueado (y por qué)
+- Guion del webinar (37v): faltan pendientes de oferta (razón del descuento, para quién es y no es, ancla/valor del stack, formas de pago y cuotas, bono Seminario de opciones, bono de acción rápida, qué pasa después del cierre, cómo se cumple la garantía de 1 año con un acceso de 6 meses, FAQ, módulos, destino del CTA, qué testimonios van).
+- Creativos (37b): esperan guiones de copy sin devoluciones.
+- Campaña (37k): espera copy aprobado, creativos, registro probado, presupuesto aprobado, evento de registro del píxel y exclusiones compartidas en las 3 cuentas (las listas de Black November solo están en la cuenta de Colombia).
+- Todo lo de carrito, cierre y post: sin tarea y sin oferta cerrada.
+
+4. Detalle por fase
+
+Fase 0 · Preparación (hasta ~11 nov)
+Objetivo: que el 12 nov se pueda activar sin tocar nada. Qué falta: cerrar el brief (371), decisiones humanas de la sección 3, asignar fechas reales a lo que no tiene tarea. Riesgo: quedan 10 días hasta la captación (desde 2 nov).
+
+Fase 1 · Captación (12 a 27 nov)
+- Anuncios: ángulos A anti-estafa/transparencia, B de información a sistema, C agenda llena y familia, D herramienta que ayuda a pensar con Geny (ya escritos en el entregable de copy; sujetos al re-chequeo de compliance: sin preguntar ni afirmar ingresos, pérdidas, edad ni familia del espectador en el hook).
+- Reglas del cliente: nunca "gana dinero", sin cifras de dinero, sin "máquina de ingresos inmune a crisis" en anuncios, sin garantía de 1 año ni precio en captación, aviso de riesgo en toda pieza.
+- Registro con las 5 preguntas calificadoras del brief.
+- Campaña se crea en pausa; se activa solo con aprobación de Dillan. Exclusión de públicos de Black November (revisar).
+- Meta de registros: sin meta por ahora (Dillan, 2 nov). CPL objetivo: [PENDIENTE].
+
+Fase 2 · Calentamiento (12 a 27 nov)
+- Canales confirmados: grupos de WhatsApp y email.
+- Contenido, frecuencia, número de mensajes, si habrá lives o contenido previo al webinar: [PENDIENTE] (el blueprint no lo define; el material de Dillan sobre el lanzamiento semilla lo propone como práctica, pero no está aprobado para este proyecto).
+- Número de WhatsApp (verificación en Meta, uso de API o grupos manuales): [PENDIENTE].
+- Revisar las respuestas de la encuesta cada 2 o 3 días (práctica del material de Dillan; confirmar que aplica).
+
+Fase 3 · Evento (27 nov, 7:00 p. m. Colombia)
+- Megaoferta de 11 bloques: apertura + razón de la oferta, para quién es y no es, qué es PRO, prueba, stack + ancla, la megaoferta (USD 897), bonos, order bumps, garantía, urgencia + FAQ, cierre + CTA.
+- Hora local por país (México, EE. UU.): [PENDIENTE] (el copy de ads ya hizo la conversión horaria).
+- Tipo de transmisión y repetición del webinar: YouTube confirmado; si hay repetición o replay: [PENDIENTE].
+- Corrección de incoherencia a resolver: el blueprint marca bonos Geny Express y Crea tu agente como order bumps (bloque 8) y a la vez dice "decidir"; el brief ya los fijó como bonos. Actualizar el blueprint al escribir el guion.
+
+Fase 4 · Carrito abierto (27 a 30 nov)
+- El carrito abre el 27 nov al terminar o durante el webinar.
+- Qué se comunica cada día, canal, objeciones a atacar por día: [PENDIENTE] (sin tarea).
+- Formas de pago / cuotas: [PENDIENTE].
+- Seguimiento 1 a 1: [PENDIENTE] (Setter, si el cliente lo pide). Quién cierra: [PENDIENTE].
+
+Fase 5 · Cierre (30 nov, 12:00 p. m.)
+- Hora de cierre "por confirmar".
+- Incoherencia: el blueprint dice cierre el 30 nov a las 12:00 p. m. y a la vez "refuerzo del último día (Cyber Monday): se cierra a medianoche". Hay que fijar una sola hora. Nota: el 30 de noviembre de 2026 es lunes (Cyber Monday).
+- Live de cierre: [PENDIENTE] (no está en el blueprint).
+
+Fase 6 · Post
+- Qué pasa después del cierre: [PENDIENTE] (¿vuelve a USD 1.197 o desaparece la modalidad de 6 meses?). Esta decisión también define el copy de cierre.
+- Re-open, downsell/upsell ("Yo Invierto" USD 197, "Capitanes" USD 10.000 según el blueprint): [PENDIENTE].
+- Debriefing y encuesta a no compradores: [PENDIENTE] (sin tarea).
+
+5. Dependencias críticas (ruta crítica)
+
+1. Cierre de pendientes del brief (371) -> guion del webinar (37v) y copy de calentamiento de carrito.
+2. Compliance (374) + decisiones humanas -> campaña (37k).
+3. Copy (377) re-chequeado -> creativos (37b) -> campaña (37k).
+4. Registro, tracking y evento del píxel (37f) -> campaña (37k) -> activación 12 nov.
+5. Aprobación humana del presupuesto y de la activación.
+
+Fechas de las tareas en ClickUp: 371 el 5 nov, 374 el 6 nov, 377 el 9 nov, 37b/37f/37k el 11 nov, 37p el 16 nov, 37v el 20 nov.
+
+6. Métricas y metas
+
+Métrica  |  Meta
+Registros al webinar  |  Sin meta por ahora (Dillan, 2 nov)
+Costo por registro  |  [PENDIENTE]
+Asistencia al webinar  |  [PENDIENTE]
+Conversión a compra  |  [PENDIENTE]
+Ventas de PRO 6 meses  |  [PENDIENTE]
+
+Sin metas no hay forma de decir si el proyecto va bien o mal: se pide a Dillan antes del 12 nov.
+
+7. Riesgos específicos
+
+1. Políticas de Meta para trading e inversión y 7 anuncios rechazados históricos en Colombia; 3 anuncios que Meta dejó inactivos el 29 y 30 de oct (motivo no legible).
+2. EE. UU. exige verificación y categoría especial de productos financieros: condiciona esa cuenta.
+3. Choque entre la PUV ("máquina de ingresos inmune a las crisis") y la regla de ángulo del cliente: en el webinar queda; en anuncios se aterriza.
+4. La garantía de 1 año no encaja con un acceso de 6 meses: sin resolver cómo se cumple ni quién la ejecuta.
+5. Escasez: usar solo los 80 cupos del Reto 21 y el cierre del 30 nov.
+6. Doble conteo en el stack (Geny LAB y GenyB Lite ya vienen en PRO).
+7. Cruce de audiencias con Black November: exclusiones solo existen en la cuenta de Colombia.
+8. Tiempo: faltan 10 días para la captación y 25 para el evento con varias tareas sin definir.
+
+8. Preguntas abiertas para Dillan
+
+1. ¿Apruebas el reparto de USD 4.000 (y cómo se convierte a COP)? ¿EE. UU. se activa o queda en 0?
+2. ¿Cuál es el texto oficial del aviso de riesgo y el dominio de la landing?
+3. ¿El registro al webinar tiene costo? ¿A dónde apunta el CTA y el checkout (Whop, Hotmart u otro)?
+4. ¿A qué hora cierra el carrito: 12:00 p. m. o medianoche del 30 nov?
+5. ¿Qué pasa después del cierre (vuelve a USD 1.197, desaparece la modalidad)? ¿Hay re-open?
+6. ¿Cuál es la razón oficial del descuento, para quién es y para quién no, valor total del stack, formas de pago y cuotas?
+7. Bonos: ¿valor, formato y objeción del Seminario de opciones? ¿Hay bono de acción rápida?
+8. Garantía de 1 año con acceso de 6 meses: ¿cómo se cumplen las condiciones, quién la ejecuta y cómo se pide?
+9. ¿Qué testimonios van en el webinar?
+10. Calentamiento: ¿cuántos mensajes, qué frecuencia, hay lives previos, qué número de WhatsApp (API o grupos)?
+11. ¿Hay seguimiento 1 a 1 (Setter) y quién cierra (Closer)? ¿El cliente lo pidió?
+12. Metas: registros, costo por registro, asistencia, conversión y ventas de PRO 6 meses.
+13. ¿Hay replay del webinar y se mantiene el cierre aunque el replay siga disponible?
+
+
+========================================================================
+DOCUMENTO 3: BRIEF (brief.md)
+========================================================================
+
+Brief — Ingresarios
+
+Versión 2 · creado 2026-11-02 · actualizado 2026-11-06 con los cambios del blueprint (producto, precio, promesa, stack, fecha del webinar) · estado: borrador, con pendientes.
+Fuente principal: blueprint-webinar.md (copia del Google Doc "Blueprint del Black Friday", reimportada 2026-11-06). No se inventa nada que ese documento no diga; lo que falta está marcado como [PENDIENTE].
+Archivos de apoyo en esta carpeta: cliente.md (ficha detallada, reglas de ángulo e historial), ganadores.md (9 guiones de anuncios ganadores analizados) y testimonios.md (3 testimonios con link de Drive). Los tres vienen del sistema anterior de Dillan y mencionan archivos y rutas que no existen en este proyecto.
+
+Negocio
+- Marca: Ingresarios. Educación y herramientas de trading/inversión (criptos, Forex, índices) con comunidad ("Tribu Ingresarios") y un ecosistema de herramientas con IA ("Geny").
+- Presentador: Juan Villegas.
+- Plataforma de contenido: Plataforma 3.0 en GoHighLevel (GHL). Conexión MCP a GHL: en proceso (ver [PENDIENTE]).
+- Mercados: Colombia principalmente; México, Estados Unidos, Canadá y Latam. Canadá recibe un porcentaje pequeño del presupuesto (ver reparto).
+- Quién aprueba por parte del cliente: [PENDIENTE] (el blueprint dice que la PUV la definió Dillan el 2026-10-27).
+
+Historial (de la lista de ClickUp "Ingresarios", que ya existe)
+La lista Ingresarios (https://app.clickup.com/9011611792/v/l/li/901112844291) tiene más de 100 tareas, todas completadas, de trabajo anterior de Dillan con este cliente. Por sus títulos se ve que ya hubo, entre otros:
+- Lanzamientos: Meteórico, Lanzamiento pago, Corredor Polaco (fases 1 y 2), webinars semanales, VSL y campaña de renovaciones.
+- Infraestructura ya montada: tracking (píxel de Meta, Google Ads, GA4, Clarity), dominio verificado en Meta, GHL conectado con Facebook, hoja de KPIs con Windsor.ai, públicos personalizados y exclusiones, campañas a público frío y caliente en varios países, revisiones de compliance de Meta sobre promesa y copys.
+- Es lo que usaría el equipo como punto de partida. No lo he revisado en detalle; antes de reutilizar cuentas, públicos o nomenclatura hay que verlo con Dillan.
+
+Proyecto actual: Black Friday + Cyber Monday 2026 ("Blacknovember")
+Hito  |  Fecha
+Captación de leads  |  12 al 26 de noviembre de 2026
+Webinar (1 sola sesión, YouTube)  |  26 de noviembre, 7:00 p. m. hora Colombia
+Carrito abierto  |  26 al 30 de noviembre (abre el 26 durante o al terminar el webinar)
+Cierre del carrito  |  30 de noviembre a medianoche (hora Colombia)
+
+- Calentamiento: grupos de WhatsApp y email.
+- Título del webinar: "BlackFriday – Taller aprende a invertir desde cero".
+- Tipo de webinar: megaoferta de Black Friday, no una clase. No hay bloque de enseñanza ni "3 claves". Existe para presentar la oferta, justificar el precio y cerrar dentro de la ventana del 26 al 30. Quien entra ya conoce Ingresarios o viene por el descuento.
+- Tiempo disponible: la captación empieza el 12 de noviembre y el webinar es el 26 (o 27, por confirmar). Los anuncios y el funnel de registro tienen que estar listos antes del 12.
+
+Oferta del pitch
+- Producto: Ingresarios CORE por 1 año (antes el blueprint decía PRO 6 meses; cambió el 2026-11-06).
+- Precio final: USD 597 por 1 año (regular 1 año: USD 997, ahorro USD 400, ~USD 50 al mes). Referencia: CORE mensual USD 99 al mes (USD 1.188 al año). USD 997 es el precio anual publicado en la página de planes.
+- Promesa única de valor (actualizada en el blueprint; fecha original 2026-10-27): "Haz que tu capital crezca más allá de lo que te paga un CDT y empieza a construir tu jubilación en los próximos 6 meses, con un sistema propio, sin depender del banco ni de asesores, activando tu Flow de Inversionista con la triple plataforma teórica, práctica y tecnológica." Los "6 meses" son el horizonte de la promesa; el plan dura 1 año.
+  - ⚠️ Ver Riesgos: "que tu capital crezca más allá de un CDT" compara con un rendimiento financiero y choca con la regla de ángulo del cliente y con las políticas de Meta; en el pitch queda tal cual, en anuncios se aterriza.
+- Qué incluye CORE (1 año):
+  - Herramientas: Sniper ULTRA (nuevo). Ya no aparecen Cluster Vela, Nuevo POC ni Sniper base (NinjaTrader), que estaban en la versión PRO.
+  - En vivo: Canales de Análisis de Mercado ([PENDIENTE: confirmar; la tarjeta de CORE lo incluye y la comparativa de la página no]) · clases 100 % en vivo y sesiones de lunes a viernes para resolver preguntas. Ya no aparecen Pre-Mercado + Post-Mercado.
+  - Ecosistema Geny IA: Asistente Geny IA / Geny Chat (siempre se regala) · Geny B, bitácora inteligente (bono) · App Geny LAB (bono).
+  - Comunidad: Tribu Ingresarios (grupo cerrado del plan).
+  - Contenido: Plataforma 3.0 en GHL, 7 módulos completos y 40 clases grabadas e intensivas.
+  - Experiencia: Reto 21 (bono, 1 edición; 21 días).
+  - Ya no aparece Soporte prioritario.
+- Bonos: App Geny LAB y 1 edición del Reto 21, cada uno contra una objeción [PENDIENTE: objeción, entrega y ángulo de cada uno]. Ya vienen incluidos en CORE según la página de planes, así que los USD 997 ya los cuentan: no se suman al ancla.
+- Order bumps (decidido en el blueprint): Geny Express (USD 47) y Crea tu agente (USD 49), en el checkout. Reemplaza la decisión anterior que los ponía como bonos.
+- Seminario de opciones: sale del pitch (decisión de Dillan, 2026-11-06). No va como bono ni en el stack.
+- Garantía: 15 días con reembolso (capa 1) y garantía de resultados (capa 2) a 12 meses, lo que dura el plan. El blueprint la deja como "si va" y anota que el cliente duda de que haga falta; la decisión de Dillan del 2026-11-02 fue que sí va (condiciones en Decisiones de Dillan, punto 4).
+- Escasez real:
+  - Cupos: solo los primeros 80 compradores entran al Reto 21 de diciembre de 2026 (el Reto 21 es un bono de CORE); los demás compran igual CORE 1 año al mismo precio y entran a la siguiente edición (2027).
+  - Tiempo: ventana de 5 días (26 al 30 de noviembre); cierra el 30 de noviembre a medianoche (hora Colombia). Decisión de Dillan, 2026-11-06.
+  - Después del cierre: CORE 1 año deja de venderse a USD 597 y vuelve al precio regular de USD 997 (definido en el blueprint).
+
+Avatar
+- Demografía: 30 a 65 años · 85 % hombres, 15 % mujeres · Colombia, México y EE. UU. (también Argentina, Canadá, Perú) · ingresos sobre USD 1.000 · desde bachillerato hasta posgrado.
+- Psicología: ambicioso y analítico, busca estructura y reglas, impulsivo y poco tolerante a la frustración. Valora libertad financiera, independencia y disciplina.
+- Dolores: pierde más de lo que gana operando solo; improvisa sin sistema; infoxicación; descontrol emocional (ansiedad, sobreoperación); poco tiempo y capital; presión de la pareja y la familia.
+- Miedos: perder más dinero; que sea "otro curso de humo"; no ser capaz de entender; la crítica de su pareja/familia; no lograr una cuenta fondeada.
+- Objeciones: "ya compré otros cursos y no me sirvieron"; "no quiero perder más dinero"; "¿funcionará para mí?"; "no tengo tiempo"; "no tengo dinero para empezar".
+- Deseos: un sistema paso a paso con reglas exactas; consistencia en 3 a 6 meses; ingreso extra en dólares; acceso a cuentas fondeadas; acompañamiento y tribu; libertad y tiempo con la familia.
+- Nota: las cifras de ingreso que aparecen como "deseo" del avatar describen lo que el avatar quiere, no son una promesa que Ingresarios pueda hacer.
+
+Preguntas calificadoras / encuesta de registro
+1. ¿Cuál es tu rango de ingresos mensuales promedio en USD?
+2. ¿Cuánto hace que me conoces y/o a la Tribu Ingresarios?
+3. ¿Cuál es la situación que más te define actualmente?
+4. ¿Alguna vez has intentado invertir en acciones, bonos, futuros, criptos u otro instrumento financiero?
+5. De 0 a 5, ¿cuál es tu nivel de experiencia con el trading y las inversiones?
+
+Tono de voz
+- Neutro LATAM, con registro paisa cuando el lanzamiento sea específico para Colombia (de cliente.md). Presentador: Juan Villegas, a cámara y en primera persona.
+- Regla de ángulo obligatoria (Dillan, 2026-07-10): el copy nunca promete "ganar dinero" (ni en titular, hook o CTA). Promete claridad, consistencia y ejecución: dejar de operar a ciegas y tener un sistema claro. El dinero es consecuencia implícita, nunca la promesa.
+- Cifras de la cuenta del reto: siempre en formato K ("de 2K a 20K", "va por 60K"), nunca "60.000 dólares". Arco de tres tiempos: meta puesta (20K), superada, meta nueva (100K).
+- La tecnología no da señales de compra/venta: ayuda a pensar y documentar el proceso. Es lo que la diferencia de quien vende "señales" o "bots que operan por ti".
+- Segmentos del avatar (no mezclar ángulos en un mismo anuncio): Premium (ingresos de USD 1.000 o más; 45 a 64 años; profesional ocupado; atacar primero el miedo a la estafa, vocabulario de profesional, ángulo de tiempo y de familia) y Base (USD 500 a 999; ángulo de accesibilidad y primer paso).
+
+Objetivo, presupuesto y KPIs
+- Meta de ventas de CORE 1 año: [PENDIENTE]
+- Meta de leads / registros al webinar: sin meta por ahora (Dillan, 2026-11-02); se define luego.
+- Presupuesto de pauta para la captación: USD 4.000 (Dillan, 2026-11-02). Aprobación humana obligatoria antes de activar o gastar.
+- Reparto del presupuesto (Dillan, 2026-11-02; tasa de referencia COP 3.300 por USD, no es la TRM del día; las cuentas están en COP):
+País  |  %  |  USD  |  COP
+Colombia  |  50 %  |  2.000  |  6.600.000
+Estados Unidos  |  20 %  |  800  |  2.640.000
+México  |  15 %  |  600  |  1.980.000
+Resto del mundo  |  10 %  |  400  |  1.320.000
+Canadá  |  5 %  |  200  |  660.000
+Total  |  100 %  |  4.000  |  13.200.000
+
+  Canadá (5 %) se tomó de Colombia el 2026-11-06 al agregarlo como mercado; Dillan pidió "un porcentaje pequeño" y el 5 % es propuesta de Claude, ajustable. Decisiones (Dillan, 2026-11-02): México va dentro de la cuenta de Resto del mundo, con su propia campaña. Sin reserva. Si EE. UU. no se habilita a tiempo (verificación del anunciante y categoría especial de servicios financieros), se decide en ese momento. La activación sigue requiriendo aprobación de Dillan.
+- Registro al webinar: gratis (Dillan, 2026-11-02).
+- Página de registro: aún no existe; hay que crearla primero (tarea de Web, con textos de Copy). Dominio y URL: pendientes.
+- Instagram: https://www.instagram.com/ingresarios/ (Dillan, 2026-11-02).
+- Aviso de riesgo oficial (redactado por Claude a pedido de Dillan; pendiente de su visto bueno final y, idealmente, de revisión legal): "Operar en mercados financieros implica riesgo de pérdida de capital. Este contenido es educativo, no constituye asesoría financiera ni garantiza resultados." Va en todos los anuncios, la página de registro y el webinar.
+- Quién aprueba por parte del cliente: Dillan.
+- Cuentas publicitarias de Meta (Dillan, 2026-11-02): Colombia 24627770880193683 · Estados Unidos 1175241141461309 · Resto del mundo 2476824186065645. Pendiente: confirmar con Media Buying cuáles se usan y su estado de compliance financiero.
+- Cuenta de Google Ads (Dillan, 2026-11-03): 889-446-1168. Cuenta nueva: se optimizó primero por inicio del checkout (aprendizaje de eventos menores a mayores) y se está cambiando el evento de optimización directamente a compra.
+- GHL: MCP conectado a la cuenta de Ingresarios (Dillan, 2026-11-02).
+- Razón del descuento: es Black Friday y el carrito solo está abierto 4 días.
+- Geny App = Geny LAB: confirmado. Exclusión de públicos entre Black November y Black Friday: confirmada, sí se excluyen.
+- "+10.000 estudiantes": son los alumnos de "Aprende a invertir desde cero" de Ingresarios (fuente: Dillan).
+- Respuestas pendientes del equipo del cliente: bono de acción rápida, formas de pago/cuotas, CTA.
+- KPIs (costo por registro, asistencia al webinar, conversión a compra): [PENDIENTE]
+
+Cómo se reparte el trabajo (agentes)
+Área  |  Entrega para este proyecto
+Copy  |  Guion del webinar de megaoferta (con la skill guion-webinar-semilla, adaptada: ver Riesgos) · copies de captación y de WhatsApp/email de calentamiento · anuncios con guiones-ads-meta-google
+Media Buying  |  Campaña de captación del 12 al 26 de noviembre
+Web  |  Página de registro, tracking, flujos en GHL (cuando esté conectado)
+Audiovisual  |  Creativos de los anuncios
+Setter  |  Seguimiento de leads calientes si el cliente lo pide
+Data  |  Lectura de resultados del registro y asistencia
+PM  |  Tareas en ClickUp, calendario hasta el 30 de noviembre y revisión de cada entregable
+
+Prueba social disponible
+- Número que sí se puede mostrar sin prometer dinero: +10.000 estudiantes en la Academia, +18 años entrenando traders y +30 años operando (Juan Villegas). Según cliente.md, falta documentar la fuente interna de la cifra de estudiantes antes de pautarla.
+- Testimonios (testimonios.md), con su regla de uso:
+  - Robinson (#3) y Kenia (#2): se pueden usar completos. Robinson sirve al ángulo de exceso de información; Kenia al miedo a las estafas.
+  - Mario (#1): solo el corte antes de las cifras de cuenta y cash flow. Esas cifras no se usan.
+  - Todo testimonio va con su link de Drive.
+- Ganadores (ganadores.md): los hooks que mejor funcionaron para este avatar (metáfora física, transparencia radical, presentador con autoridad y "yo pasé por ahí", analogía de la bicicleta, democratización). Se reutilizan como patrones, no se copian.
+
+Decisiones de Dillan sobre las fuentes (2026-11-02)
+1. Black November y Black Friday son proyectos distintos.
+   - Black November: renovación de PRO 12 meses para ex-miembros de la Tribu, 100 % remarketing, hasta el 30 de noviembre.
+   - Black Friday (este brief): captación de leads nuevos hacia el webinar (26 de noviembre) y venta de CORE 1 año a USD 597.
+   - Cada campaña debe excluir al público de la otra. Media Buying lo revisa antes de activar; no se asume que ya esté hecho.
+2. Precio de PRO 12 meses (referencia de Black November): USD 1.897, sin descuento. Ya no es la referencia de este proyecto: Black Friday vende CORE 1 año (USD 997 regular, USD 597 en oferta). El USD 1.497 que aparece en cliente.md era el precio final de una edición anterior del curso pago y no se usa como referencia en Black Friday.
+3. Avatar de este proyecto: ingresos de más de USD 1.000 al mes → segmento Premium. Aplican las reglas de copy del segmento Premium de cliente.md: atacar primero el miedo a la estafa, vocabulario de profesional, ángulo de tiempo ("no exige estar pegado a la pantalla") y de familia, y no usar el ángulo de accesibilidad del segmento Base.
+4. Garantía de resultados: 1 año, además de los 15 días de reembolso. Condiciones registradas en cliente.md: seguir el plan, publicar su bitácora y plan de trading en la Tribu cada semana, participar en las clases y seguir el método. Si aun así no tuvo resultados de balance positivo, se reembolsa la inscripción. Los 15 días se piden por correo a alumnos@ingresarios.com.
+5. El nombre del producto de IA es "Geny" (en cliente.md y en las transcripciones aparece a veces como "Jenny" por error). En todo el copy se escribe Geny.
+
+Lo que esas decisiones dejan abierto:
+- La garantía (12 meses) ahora coincide con la duración de CORE (1 año), así que se resuelve el desfase de antes. Falta confirmar que el cliente la acepta (el blueprint dice que duda de que haga falta).
+- Quién ejecuta la garantía de resultados y cómo se solicita.
+- cliente.md aún registra un conflicto antiguo de "7 días vs 10 clases" del taller gratuito. No afecta a Black Friday; solo no repetir ese dato.
+
+Riesgos y reglas (revisar antes de publicar nada)
+1. Anuncios de trading e inversión: Meta tiene políticas más estrictas para servicios financieros y trading. Hay que revisarlas y confirmar si la cuenta publicitaria necesita requisitos o verificaciones antes de crear el primer anuncio. No lo doy por resuelto.
+2. Promesas de ingresos: "máquina de ingresos inmune a las crisis" y los montos de dinero del avatar (300 a 5.000 USD/mes) no pueden usarse como promesa en anuncios. En ads, la PUV se aterriza a claridad, método, consistencia y ejecución. Todo mensaje sobre inversión debe incluir el aviso de riesgo que corresponda.
+3. Regla de ángulo del cliente: nunca "gana dinero". Testimonios sin cifras de dinero.
+4. Escasez: solo la que es real (80 cupos del Reto 21 y cierre del 30 de noviembre). Si cambian, se actualiza todo.
+5. Estructura del webinar: la skill guion-webinar-semilla está pensada para una clase con "3 claves". Este webinar es una megaoferta, así que el copywriter usa solo la parte de venta (Parte 3) y los patrones de stack, garantía, escasez y cierre, sin bloque de enseñanza.
+6. Doble conteo en el stack: App Geny LAB y 1 edición del Reto 21 ya vienen dentro de CORE. Si se suman aparte, el valor se cuenta dos veces. Propuesta del blueprint: mostrarlos como bonos con su valor suelto (Geny LAB USD 69), sin sumarlos al ancla. Solo Geny Express y Crea tu agente sumarían, y van como order bump.
+7. Promesa vs. políticas de Meta: la PUV nueva habla de "crecer más allá de un CDT" y de "construir tu jubilación". En anuncios no se promete rendimiento ni se compara contra productos financieros; se aterriza a claridad, método y ejecución, con aviso de riesgo.
+
+Pendientes (del blueprint y míos)
+- Razón oficial del descuento (por qué este precio y solo 4 días).
+- Para quién es y para quién no es.
+- Valor total del stack (ancla): el ancla actual es USD 997; falta confirmar si suman Geny Express y Crea tu agente. Formas de pago y cuotas.
+- Bonos App Geny LAB y Reto 21: objeción que mata, formato de entrega y ángulo. Valor suelto del Reto 21 y de Geny B (Geny B Lite estaba previsto en USD 29).
+- Confirmar el contenido de CORE: Canales de Análisis de Mercado (tarjeta sí, comparativa no).
+- Bono de acción rápida (ya no aparece en el blueprint).
+- Quién ejecuta la garantía de 12 meses y cómo se pide.
+- FAQ del webinar, módulos del programa (el blueprint habla de 7 módulos y 40 clases, pero la tabla de módulos sigue vacía), destino del CTA.
+- Elegir qué testimonios van en el webinar (ya están en testimonios.md; aplican las reglas de uso de arriba).
+- Documentar la fuente interna de "+10.000 estudiantes".
+- Revisar con Media Buying las exclusiones de público entre Black November y Black Friday.
+- Downsell / upsell: el blueprint ya no lo menciona (antes: "Yo Invierto" USD 197 · "Capitanes" USD 10.000).
+- Presupuesto, metas y KPIs. Quién aprueba por parte del cliente.
+- Conectar el MCP de GHL (la sub-cuenta de Ingresarios).
+
+
+========================================================================
+DOCUMENTO 4: BLUEPRINT-WEBINAR (blueprint-webinar.md)
+========================================================================
+
+Nota: Copia del Google Doc "BLUEPRINT DEL BLACKFRIDAY — Ingresarios" (reimportada 2026-11-06 con los cambios del blueprint). Fuente: https://docs.google.com/document/d/1pC1ve4IzAWJ4cls1rEqiXeYCRc4SAYKX52JB5TYIgWs/edit . Si el Doc cambia, volver a importar.
+
+BLUEPRINT DEL BLACKFRIDAY — Ingresarios
+0. LANZAMIENTO AL QUE APLICA
+Nombre del evento/lanzamiento: Black Friday y Cyber Monday 2026
+Fechas (registro · evento · carrito abierto · cierre):
+Captación de leads: 12 al 27 de noviembre de 2026
+Carrito abierto: 27 al 30 de noviembre de 2026
+Webinar: 26 de noviembre de 2026, el mismo día que abre el carrito, a las 7:00 p. m. hora Colombia
+Cierre del carrito: 30 de noviembre de 2026 a las 12:00 p. m.
+Presentador: Juan Villegas
+Países y registro de tono: Colombia principalmente, México, Estados Unidos, Canadá y Latam.
+1. TIPO DE FUNNEL
+Formato del evento: 1 webinar.
+Plataforma de transmisión: You Tube
+Canal de calentamiento: Grupos de whatsapp, email.
+2. PROMESA ÚNICA DE VALOR (de la oferta)
+“Haz que tu capital crezca más allá de lo que te paga un CDT y empieza a construir tu jubilación en los próximos 6 meses, con un sistema propio, sin depender del banco ni de asesores, activando tu Flow de Inversionista con la triple plataforma teórica, práctica y tecnológica.”
+Definida por Dillan el 2026-10-27. Los "6 meses" son el horizonte de la promesa; el plan que se vende dura 1 año (Ingresarios CORE).
+⚠️ "Máquina de ingresos" choca con la Regla de ángulo (nunca "gana dinero"). La PUV queda tal cual en el pitch del webinar; en los ads conviene aterrizarla a claridad, consistencia y ejecución, sobre todo por las políticas de Meta para productos financieros.
+3. EL WEBINAR (estructura de megaoferta)
+Tipo de webinar: MEGAOFERTA DE BLACK FRIDAY, no clase. No hay bloque de enseñanza ni las 3 claves PLF (oportunidad → transformación → experiencia). Quien entra ya sabe qué es Ingresarios o viene por el descuento: el webinar existe para presentar la oferta, justificar el precio y cerrar dentro de la ventana del 27 al 30 de noviembre. Todo el tiempo gira alrededor de la oferta.
+Título: BlackFriday - Taller aprende a Invertir desde cero.
+Promesa del webinar:
+“En una noche, Juan te mostrará cómo convertir tu formación como trader en un proyecto para 2027, con objetivos claros y una ruta para tus primeros 6 meses dentro de Ingresarios CORE. Descubrirás cómo integrar las herramientas, las sesiones en vivo y el Reto 21 a tu plan, para comenzar el año con dirección y acompañamiento. Además, conocerás una oferta especial y un bono exclusivo para quienes estén conectados en vivo.”
+Bloques
+| Bloque | Qué pasa | Pendiente
+1 | Apertura + razón de la oferta | Por qué existe este precio y por qué solo estos 4 días. La razón tiene que ser creíble (Black Friday, cierre de año, [PENDIENTE: otra razón real]) | Razón oficial del descuento
+2 | Para quién es (y para quién no) | Filtra: quién debería aprovechar y quién no | [PENDIENTE]
+3 | Qué es Ingresarios CORE | Demostración rápida de lo que trae CORE (Geny, clases en vivo, premercado, Tribu…). Es un recorrido, no una clase | Confirmar qué incluye CORE a 1 año
+4 | Prueba | Testimonios reales de testimonios.md, con su link. Sin cifras de dinero (regla de ángulo) | Elegir testimonios
+5 | Stack + ancla | Valor de cada componente → valor total → precio regular | Valores (§4)
+6 | La megaoferta | Revelar USD 597 por 1 año frente al precio regular de USD 997 | Definido (§4)
+7 | Bonos | App Geny LAB y 1 edición del Reto 21, cada uno contra una objeción | Objeción por bono (§4)
+8 | Order bumps | Geny Express y Crea tu agente (USD 47 y USD 49) en el checkout | Qué es cada uno
+9 | Garantía | Quitar el riesgo de compra | §4 Garantía
+10 | Urgencia + FAQ | La oferta cierra el 30 de noviembre a las 12:00 p. m.: qué pasa después del cierre. Responder las objeciones que queden | Definido (§4)
+11 | Cierre + CTA | Último llamado y paso exacto para comprar | Destino del CTA (§1)
+4. OFERTA Y PRECIOS
+Producto que se vende en el pitch: Ingresarios CORE por 1 año (oferta Black Friday y Cyber Monday, 27–30 nov 2026).
+Precio de CORE mensual (referencia): USD 99 por mes (USD 1.188 al año)
+Precio regular de CORE 1 año (sin descuento): USD 997. Es el precio anual publicado en la página de planes.
+Precio final (el que va en la stack slide y el pitch): USD 597 por 1 año de Ingresarios CORE (ahorro de USD 400 sobre el regular, equivale a ~USD 50 al mes)
+Ancla — valor total del stack: [PENDIENTE: definir qué suma, ver la nota del stack]
+Geny Express y Crea tu agente: Order Bump
+Geny Express — USD 47: enseña a usar Geny Chat con prompts más efectivos para sacarle provecho.
+Crea tu agente — USD 49: enseña a crear agentes propios que apoyen el análisis y la operación.
+Qué incluye Ingresarios CORE (1 año)
+Herramientas
+🎯🤖 Sniper ULTRA (NUEVO): Sniper Pro + Geny Trend en TradingView. Precisión de entradas, zonas clave y contexto.
+En vivo
+🧠 Canales de Análisis de Mercado: análisis, conversaciones, actualizaciones y tips diarios. [PENDIENTE: confirmar, la tarjeta de CORE lo incluye y la comparativa de la página no]
+☀️ Pre-Mercado + Post-Mercado: análisis en vivo antes y después del timbre.
+📺 Clases 100% en vivo y sesiones de lunes a viernes para resolver preguntas.
+Ecosistema Geny IA
+🧬 Asistente Geny IA (Geny Chat): planificador de trades y gestión de riesgo en un clic. (Siempre se regala.)
+📕 Geny B (BONO) (Bitácora Inteligente): bitácora para ejecutar alineado con la tendencia.
+📲 App Geny LAB (BONO): complementa el proceso en tres frentes: lo emocional, PEDEM y la relación con el dinero.
+Comunidad
+🤝 Tribu Ingresarios: comunidad en grupo cerrado del plan.
+Contenido
+🧭 Plataforma 3.0 en GHL: 7 módulos completos y 40 clases grabadas e intensivas.
+Experiencia
+🏆 Reto 21 (BONO, 1 edición): programa intensivo de 21 días para desarrollar la disciplina de documentar, evaluar y mejorar el plan de trading personal. Usa la metodología PEDEM y estrategias automatizadas como referencia. Se puede hacer en real, en fondeo o en demo.
+Precios sueltos (referencia para el stack)
+Producto | Precio suelto
+Geny LAB | USD 69
+Geny B (Bitácora Inteligente) | [PENDIENTE] (GenyB Lite estaba previsto en USD 29)
+GenyB Tribu (no es la de Capitanes) | USD 69
+Geny Chat | Siempre se regala
+Geny Express | USD 47
+Crea tu agente | USD 49
+Seminario de opciones (el que se está dictando) | [PENDIENTE]
+Stack de valor
+Entregable | Valor percibido
+Ingresarios CORE — 1 año (todo lo de arriba) | USD 997
+🎁 App Geny LAB (ya incluida en CORE) → [PENDIENTE: objeción] | USD 69 (no suma al ancla)
+🎁 1 edición del Reto 21 (ya incluida en CORE) → [PENDIENTE: objeción] | [PENDIENTE] (no suma al ancla)
+🎁 Geny Express (si va como bono) → [PENDIENTE: objeción] | USD 47
+🎁 Crea tu agente (si va como bono) → [PENDIENTE: objeción] | USD 49
+🎁 [PENDIENTE: bono de acción rápida] | [PENDIENTE]
+⚠️ App Geny LAB y 1 edición del Reto 21 vienen dentro de CORE como bonos según la página de planes, así que los USD 997 ya los incluyen. Si se suman aparte, el stack los cuenta dos veces. Propuesta: mostrarlos como bonos con su valor suelto, sin sumarlos al ancla (confirmar que Geny App = Geny LAB). Los únicos que sumarían al ancla son Geny Express y Crea tu agente, si van como bono.
+Bonos (uno por objeción)
+Por cada bono: qué es · qué dolor/objeción mata · formato de entrega · ángulo de venta.
+App Geny LAB: [PENDIENTE: objeción · entrega · ángulo]
+1 edición del Reto 21: [PENDIENTE: objeción · entrega · ángulo]
+Geny Express: order bump
+Crea tu agente: order bump
+Garantía
+Capa 1 (riesgo de compra): 15 días con reembolso 
+Capa 2 (riesgo de resultado): Si va, sería a 12 meses (lo que dura el plan). El cliente duda de que haga falta.
+Respuestas frecuentes (para el bloque de FAQ del webinar)
+[PENDIENTE: pregunta] → [PENDIENTE: respuesta]
+Escasez por cupos
+Qué se limita: los cupos del Reto 21 edición limitada que viene como bono de CORE. Solo los primeros 80 compradores entran a la edición de diciembre de 2026 del Reto 21. Los demás compran igual CORE 1 año al mismo precio, pero entran a la siguiente edición del Reto 21 (2027).
+Escasez por tiempo
+Ventana de compra: 3 días, de Black Friday a Cyber Monday.
+Abre: 27 de noviembre de 2026, al terminar o durante el webinar (7:00 p. m. hora Colombia).
+Cierra: 30 de noviembre de 2026 a las 12:00 p. m. (hora Colombia, por confirmar).
+Qué pasa después del cierre: CORE 1 año deja de venderse a USD 597 y vuelve al precio regular de USD 997.
+Refuerzo del último día (Cyber Monday): se cierra a medianoche.
+5. MÓDULOS DEL PROGRAMA (transformación por módulo)
+| Módulo | Transformación
+1 | [PENDIENTE] | De [PENDIENTE] → [PENDIENTE]
+2 | [PENDIENTE] | De [PENDIENTE] → [PENDIENTE]
+3 | [PENDIENTE] | De [PENDIENTE] → [PENDIENTE]
+7. PREGUNTAS CALIFICADORAS / ENCUESTA
+¿Cuál es tu rango de ingresos MENSUALES promedio en USD?
+¿Cuánto hace que me conoces y/o a la Tribu Ingresarios?
+¿Cuál es la situación que más te define actualmente?
+¿Alguna vez has intentado invertir en acciones, bonos, futuros, criptos o algún otro instrumento financiero?
+De 0 a 5, ¿cuál es tu nivel de experiencia con el trading y las inversiones?
+8. AVATAR / PERSONA
+1. Perfil Demográfico
+Edad: 30 a 65 años
+Género: Predominantemente masculino (85% hombres y 15% mujeres)
+Ubicación: Principalmente Colombia, México y Estados Unidos, además de presencia activa en Argentina, Canadá y Perú.
+Nivel de Ingresos: Arriba de 1,000 USD.
+Nivel Educativo: Desde bachillerato y formación técnica hasta profesionales universitarios y personas con posgrados o doctorados
+Deduzco el perfil completo del avatar (cliente ideal / buyer persona) que se desprende de la información de tus documentos de contexto de Ingresarios:
+
+2. Perfil Psicológico y Rasgos de Personalidad
+Ambicioso y analítico: Quiere resultados concretos sin perder tiempo; entiende conceptos lógicos pero no es un experto avanzado en finanzas.
+Busca estructura y reglas: Le gusta seguir plantillas, sistemas organizados, listas de chequeo y pasos claros.
+Impulsivo pero poco tolerante a la frustración: Se molesta si no observa resultados rápidos y tiende a tomar decisiones de compra impulsivas cuando siente que encontró la solución.
+Valores fundamentales: Libertad financiera, independencia (no depender de un jefe o salario fijo), disciplina personal y responsabilidad sobre sus propios resultados.
+Intereses: Trading (criptos, Forex, índices), emprendimiento digital, automatización/sistemas, crecimiento personal e influencers/creadores financieros en YouTube, TikTok e Instagram.
+
+3. Dolores (Pains) y Frustraciones
+Inconsistencia en el mercado: Ha intentado hacer trading por su cuenta pero pierde más dinero del que gana.
+Falta de un sistema claro: Siente que improvisa constantemente por no tener una estrategia probada con reglas fijas de entrada, salida y gestión de riesgo.
+Saturación e infoxicación: Consume contenido gratuito e información contradictoria que le genera desorden mental y parálisis.
+Descontrol emocional: Sufre de ansiedad, miedo, sobreoperación e impulsividad al momento de tomar decisiones en la pantalla.
+Limitación de tiempo y capital: Siente que su empleo no le permite dedicar horas ilimitadas al gráfico o que no cuenta con un capital grande para arrancar.
+Presión y responsabilidad familiar: Siente el peso de dar estabilidad a su hogar y teme la crítica de su pareja o familia si vuelve a fallar.
+
+4. Miedos Principales
+Miedo a perder más dinero.
+Miedo a que este programa sea "otro curso más" de teoría o humo que no funciona.
+Miedo a no ser capaz o a no entender la estrategia.
+Miedo a que el mercado lo siga castigando y quede atrapado en el mismo ciclo.
+Miedo a la crítica de su pareja o familia tras volver a intentar.
+Miedo a no lograr una cuenta fondeada.
+
+5. Objeciones Habituales
+"Ya he comprado otros cursos y no me han servido / me abrumaron de información".
+"No quiero perder más dinero".
+"¿Esto realmente funcionará para mí?".
+"No tengo mucho tiempo por mi trabajo actual".
+"No tengo suficiente dinero para empezar".
+
+6. Deseos y Motivaciones (Dream Outcome)
+Un sistema concreto e integral: Tener un método paso a paso con reglas exactas de ejecución sin tener que adivinar.
+Rentabilidad en 3 a 6 meses: Alcanzar consistencia y dominar su comportamiento frente al mercado.
+Ingreso extra en dólares: Generar desde $300 hasta $1,000 USD/mes adicionales, o eventualmente reemplazar su empleo alcanzando de $2,000 a $5,000 USD/mes.
+Acceso a Cuentas Fondeadas: Obtener y gestionar capital de empresas fondeadoras ($10k, $25k, $50k o más) para operar sin arriesgar sus ahorros personales.
+Acompañamiento y tribu: Contar con un mentor y una comunidad activa que audite sus bitácoras para corregir errores a tiempo.
+Tranquilidad financiera y libertad: No depender de un jefe, trabajar desde casa o cualquier lugar y tener tiempo de calidad para disfrutar con su familia.
+🎯 ¿Te gustaría que usemos esta caracterización del avatar para redactar un guion publicitario, una secuencia de correos o adaptar alguna de las ofertas?
