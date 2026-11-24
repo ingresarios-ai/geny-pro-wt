@@ -1,6 +1,6 @@
 # Estado Actual y Memoria del Proyecto — GENY PRO (INGRESARIOS)
 
-**Última actualización:** 18 de noviembre de 2026  
+**Última actualización:** 23 de noviembre de 2026  
 **Directorio del proyecto:** `/Users/josuegarcia/Antigravity/GENY MODELO`  
 **Dominio en Producción (Vercel `iad1`):** `https://genypro.ingresarios.ai/`  
 **Repositorio GitHub:** `https://github.com/ingresarios-ai/geny-pro-wt` (`main`)  
@@ -18,7 +18,7 @@ Todas las tablas están creadas en producción con **Row Level Security (RLS)** 
 4. `public.geny_sessions` y `public.geny_messages`: Memoria conversacional por alumno (ventana de 10 mensajes) y auditoría semanal **`GENY COMPLIANT`** + curación de **Dataset Oro (`.jsonl`)**.
 5. `public.geny_knowledge_documents` y `public.geny_knowledge_chunks`: Base de conocimiento vectorial a **768 dimensiones** (`pgvector` + búsqueda semántica híbrida `search_geny_knowledge`) con soporte para categorías personalizadas.
 6. `public.geny_settings` y `public.geny_settings_snapshots`: Configuración en vivo del motor IA, prompts, bóveda de secretos (`runtime_secrets`) y respaldos automáticos para restauración en 1 clic (`previous_working_snapshot`).
-7. `public.geny_payment_events`: Registro de webhooks de Whop, Stripe y Hotmart.
+7. `public.geny_payment_events`: Registro de webhooks de GoHighLevel (`ghl`), Whop, Stripe y Hotmart.
 
 ### B. Panel Administrativo (`/admin`) — `src/components/admin/AdminDashboardClient.tsx`
 - **Branding `GENY PRO`:** Monograma geométrico `GP` (sin estrellitas genéricas) y nombre `GENY PRO` unificado en toda la plataforma.

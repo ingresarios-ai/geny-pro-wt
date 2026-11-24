@@ -56,5 +56,5 @@ Este archivo se carga automáticamente como memoria persistente del espacio de t
 - **Pendientes posteriores en hoja de ruta:**
   - Terminar de pegar `WHATSAPP_PHONE_NUMBER_ID` y `WHATSAPP_ACCESS_TOKEN` en `/admin` y suscribir `messages` en Meta Webhook (`https://genypro.ingresarios.ai/api/webhooks/whatsapp`).
   - Rediseño visual ejecutivo del panel `/admin` (menú lateral con vistas independientes, 100 % visual sin tocar lógica técnica) cuando el usuario indique retomarlo.
-  - Importación de alumnos activos por CSV y conexión de webhooks de pago (Whop, Stripe, Hotmart).
+  - Webhook oficial de **GoHighLevel (GHL)** ya activo en `https://genypro.ingresarios.ai/api/webhooks/ghl` (`src/app/api/webhooks/ghl/route.ts`, protegido con `GHL_WEBHOOK_SECRET`, soporta `expires_at` y `duration_days`, altas y bajas automáticas). Pendiente importación CSV masiva o conexión de Whop/Stripe/Hotmart si aplica.
 
