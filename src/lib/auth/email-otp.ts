@@ -3,7 +3,7 @@ export async function sendVerificationOtpEmail(params: {
   fullName?: string | null;
   otpCode: string;
   channel: "telegram" | "whatsapp";
-}): Promise<{ delivered: boolean }> {
+}): Promise<{ delivered: boolean; resendId?: string }> {
   const resendKey = process.env.RESEND_API_KEY;
   const from =
     process.env.EMAIL_FROM ||
@@ -51,7 +51,8 @@ export async function sendVerificationOtpEmail(params: {
     return { delivered: false };
   }
 
-  return { delivered: true };
+  const json = (await res.json().catch(() => ({}))) as { id?: string };
+  return { delivered: true, resendId: json.id };
 }
 
 function escapeHtml(raw: string): string {
@@ -65,7 +66,7 @@ function escapeHtml(raw: string): string {
 export async function sendMemberWelcomeEmail(params: {
   to: string;
   fullName?: string | null;
-}): Promise<{ delivered: boolean }> {
+}): Promise<{ delivered: boolean; resendId?: string }> {
   const resendKey = process.env.RESEND_API_KEY;
   const from =
     process.env.EMAIL_FROM ||
@@ -169,7 +170,8 @@ export async function sendMemberWelcomeEmail(params: {
       return { delivered: false };
     }
 
-    return { delivered: true };
+    const json = (await res.json().catch(() => ({}))) as { id?: string };
+    return { delivered: true, resendId: json.id };
   } catch (err) {
     console.error("[GENY WELCOME EMAIL EXCEPTION]", err);
     return { delivered: false };

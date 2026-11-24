@@ -5,6 +5,11 @@ import {
   getSupabaseAdmin,
 } from "@/lib/supabase/admin";
 import { sendVerificationOtpEmail } from "@/lib/auth/email-otp";
+import {
+  appendGhlContactNote,
+  buildGhlDeviceBoundNote,
+  buildGhlOtpSentNote,
+} from "@/lib/channels/ghl";
 
 export type GateResult =
   | { allowed: true; user: GenyUser; justActivatedMessage?: string }
@@ -313,6 +318,19 @@ export async function verifyMemberAndDeviceGate(params: {
 
         await supabase.from("geny_auth_sessions").delete().eq("id", session.id);
 
+        await appendGhlContactNote({
+          ghlContactId: targetUser.ghl_contact_id,
+          email: targetUser.email,
+          userId: targetUser.id,
+          noteBody: buildGhlDeviceBoundNote({
+            channel,
+            identifier:
+              channel === "telegram" && params.senderUsername
+                ? `@${params.senderUsername}`
+                : senderId,
+          }),
+        });
+
         return {
           allowed: false,
           replyText:
@@ -412,11 +430,23 @@ export async function verifyMemberAndDeviceGate(params: {
       { onConflict: "channel,sender_identifier" }
     );
 
-    await sendVerificationOtpEmail({
+    const otpEmailRes = await sendVerificationOtpEmail({
       to: emailNormalized,
       fullName: candidateUser.full_name,
       otpCode,
       channel,
+    });
+
+    await appendGhlContactNote({
+      ghlContactId: candidateUser.ghl_contact_id,
+      email: emailNormalized,
+      userId: candidateUser.id,
+      noteBody: buildGhlOtpSentNote({
+        email: emailNormalized,
+        channel,
+        otpCode,
+        delivered: otpEmailRes.delivered,
+      }),
     });
 
     return {

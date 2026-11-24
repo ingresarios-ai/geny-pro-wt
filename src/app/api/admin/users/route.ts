@@ -9,6 +9,7 @@ import {
 } from "@/lib/supabase/admin";
 import { normalizePhoneE164 } from "@/lib/auth/device-gate";
 import { sendMemberWelcomeEmail } from "@/lib/auth/email-otp";
+import { appendGhlContactNote, buildGhlWelcomeNote } from "@/lib/channels/ghl";
 
 function getOneMonthFromNowIso(): string {
   const d = new Date();
@@ -197,9 +198,19 @@ export async function POST(req: NextRequest) {
     nextStatus === "active" &&
     (!existingBefore || existingBefore.membership_status !== "active")
   ) {
-    await sendMemberWelcomeEmail({
+    const emailRes = await sendMemberWelcomeEmail({
       to: cleanEmail,
       fullName: body.full_name?.trim() || null,
+    });
+    await appendGhlContactNote({
+      ghlContactId: (data as GenyUser).ghl_contact_id,
+      email: cleanEmail,
+      userId: (data as GenyUser).id,
+      noteBody: buildGhlWelcomeNote({
+        email: cleanEmail,
+        delivered: emailRes.delivered,
+        resendId: emailRes.resendId,
+      }),
     });
   }
 

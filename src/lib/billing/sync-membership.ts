@@ -7,6 +7,11 @@ import {
 } from "@/lib/supabase/admin";
 import { normalizePhoneE164 } from "@/lib/auth/device-gate";
 import { sendMemberWelcomeEmail } from "@/lib/auth/email-otp";
+import {
+  appendGhlContactNote,
+  buildGhlDeactivationNote,
+  buildGhlWelcomeNote,
+} from "@/lib/channels/ghl";
 
 export async function syncPaymentMembershipEvent(params: {
   provider: "whop" | "stripe" | "hotmart" | "ghl";
@@ -135,12 +140,45 @@ export async function syncPaymentMembershipEvent(params: {
       params.sendWelcomeEmail === true);
 
   let welcomeEmailSent = false;
+  const effectiveGhlContactId =
+    params.externalIds?.ghl_contact_id || existing?.ghl_contact_id || null;
+  const rawLoc =
+    params.rawPayload.location &&
+    typeof params.rawPayload.location === "object"
+      ? ((params.rawPayload.location as Record<string, unknown>).id as
+          | string
+          | undefined)
+      : undefined;
+
   if (shouldSendWelcome) {
     const emailRes = await sendMemberWelcomeEmail({
       to: cleanEmail,
       fullName: params.fullName || existing?.full_name || null,
     });
     welcomeEmailSent = emailRes.delivered;
+
+    await appendGhlContactNote({
+      ghlContactId: effectiveGhlContactId,
+      email: cleanEmail,
+      userId,
+      locationIdHint: rawLoc || null,
+      noteBody: buildGhlWelcomeNote({
+        email: cleanEmail,
+        delivered: emailRes.delivered,
+        resendId: emailRes.resendId,
+      }),
+    });
+  } else if (statusToApply !== "active" && params.provider === "ghl") {
+    await appendGhlContactNote({
+      ghlContactId: effectiveGhlContactId,
+      email: cleanEmail,
+      userId,
+      locationIdHint: rawLoc || null,
+      noteBody: buildGhlDeactivationNote({
+        email: cleanEmail,
+        status: statusToApply,
+      }),
+    });
   }
 
   return { userId, statusApplied: statusToApply, welcomeEmailSent };

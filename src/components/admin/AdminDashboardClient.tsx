@@ -3946,6 +3946,11 @@ export default function AdminDashboardClient() {
                         hint: "Llave secreta para Workflows de GHL (x-ghl-secret o ?secret=...)",
                       },
                       {
+                        key: "GHL_PRIVATE_API_KEY" as ManagedSecretKey,
+                        label: "GoHighLevel Private Integration Token (Notas)",
+                        hint: "Token pit-... de GHL (Settings → Private Integrations) para escribir en Notas confirmación de correo y códigos OTP",
+                      },
+                      {
                         key: "WHOP_WEBHOOK_SECRET" as ManagedSecretKey,
                         label: "Whop Webhook Secret",
                         hint: "Firma de validación de membresías Whop",
