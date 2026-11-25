@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth/admin-session";
 import {
@@ -160,11 +161,17 @@ export async function POST(req: NextRequest) {
   const cleanEmail = body.email.trim().toLowerCase();
   const { data: existingBefore } = await supabase
     .from("geny_users")
-    .select("id, membership_status")
+    .select("id, membership_status, activation_code")
     .eq("email", cleanEmail)
-    .maybeSingle<{ id: string; membership_status: MembershipStatus }>();
+    .maybeSingle<{
+      id: string;
+      membership_status: MembershipStatus;
+      activation_code: string | null;
+    }>();
 
   const nextStatus: MembershipStatus = body.membership_status || "active";
+  const activationCode =
+    existingBefore?.activation_code || String(crypto.randomInt(100000, 999999));
 
   const { data, error } = await supabase
     .from("geny_users")
@@ -175,6 +182,7 @@ export async function POST(req: NextRequest) {
         plan_tier: selectedPlan,
         membership_status: nextStatus,
         billing_source: "manual",
+        activation_code: activationCode,
         expires_at: expResolution.expiresAtIso,
         admin_notes: body.admin_notes?.trim() || null,
         ...(cleanPhone
@@ -209,6 +217,7 @@ export async function POST(req: NextRequest) {
       noteBody: buildGhlWelcomeNote({
         email: cleanEmail,
         delivered: emailRes.delivered,
+        activationCode,
         resendId: emailRes.resendId,
       }),
     });

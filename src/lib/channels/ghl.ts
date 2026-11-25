@@ -136,23 +136,31 @@ export async function appendGhlContactNote(params: {
 export function buildGhlWelcomeNote(params: {
   email: string;
   delivered: boolean;
+  activationCode?: string | null;
   resendId?: string;
 }): string {
   const stamp = formatBogotaTimestamp();
+  const codeLine = params.activationCode
+    ? `\n• Código de activación (Soporte): ${params.activationCode}`
+    : "";
   if (params.delivered) {
     return (
       `✅ [GENY PRO · Alta y Correo de Bienvenida Enviado]\n` +
       `• Estado en GENY PRO: Membresía ACTIVA\n` +
-      `• Correo enviado a: ${params.email}\n` +
-      `• Fecha y hora (COL): ${stamp}` +
+      `• Correo enviado a: ${params.email}` +
+      codeLine +
+      `\n• Enlace Bot Telegram: https://t.me/GenyProIngresariosBot` +
+      `\n• Fecha y hora (COL): ${stamp}` +
       (params.resendId ? `\n• ID de entrega (Resend): ${params.resendId}` : "")
     );
   }
   return (
     `⚠️ [GENY PRO · Alerta de Correo]\n` +
-    `• La membresía quedó ACTIVA en GENY PRO, pero falló la entrega del correo de bienvenida a: ${params.email}\n` +
-    `• Fecha y hora (COL): ${stamp}\n` +
-    `• Acción sugerida: Verificar que el correo del contacto esté bien escrito.`
+    `• La membresía quedó ACTIVA en GENY PRO, pero falló la entrega del correo de bienvenida a: ${params.email}` +
+    codeLine +
+    `\n• Enlace Bot Telegram: https://t.me/GenyProIngresariosBot` +
+    `\n• Fecha y hora (COL): ${stamp}\n` +
+    `• Acción sugerida: Verificar correo o compartirle directamente el Código de activación de arriba.`
   );
 }
 

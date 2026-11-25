@@ -82,6 +82,7 @@ export interface GenyUser {
   stripe_subscription_id: string | null;
   hotmart_subscriber_code: string | null;
   ghl_contact_id: string | null;
+  activation_code: string | null;
   expires_at: string | null;
   suspended_reason: string | null;
   suspended_at: string | null;

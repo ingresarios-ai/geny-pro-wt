@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import {
   BillingSource,
   GenyUser,
@@ -62,6 +63,8 @@ export async function syncPaymentMembershipEvent(params: {
     : null;
 
   let userId: string | null = existing?.id ?? null;
+  const activationCode =
+    existing?.activation_code || String(crypto.randomInt(100000, 999999));
 
   if (existing) {
     const updateData: Record<string, unknown> = {
@@ -69,6 +72,9 @@ export async function syncPaymentMembershipEvent(params: {
       billing_source: params.provider as BillingSource,
       updated_at: nowIso,
     };
+    if (!existing.activation_code) {
+      updateData.activation_code = activationCode;
+    }
     if (params.fullName && (!existing.full_name || params.provider === "ghl")) {
       updateData.full_name = params.fullName;
     }
@@ -104,6 +110,7 @@ export async function syncPaymentMembershipEvent(params: {
       plan_tier: params.planTier ?? "reto",
       membership_status: statusToApply,
       billing_source: params.provider,
+      activation_code: activationCode,
       expires_at: params.expiresAt ?? null,
       ...(params.adminNotes ? { admin_notes: params.adminNotes } : {}),
       ...(normalizedPhone
@@ -165,6 +172,7 @@ export async function syncPaymentMembershipEvent(params: {
       noteBody: buildGhlWelcomeNote({
         email: cleanEmail,
         delivered: emailRes.delivered,
+        activationCode,
         resendId: emailRes.resendId,
       }),
     });

@@ -249,7 +249,26 @@ export async function verifyMemberAndDeviceGate(params: {
         };
       }
 
-      if (digitsOnly !== session.otp_code) {
+      const { data: targetUser } = await supabase
+        .from("geny_users")
+        .select("*")
+        .eq("id", session.target_user_id)
+        .single<GenyUser>();
+
+      if (!targetUser) {
+        await supabase.from("geny_auth_sessions").delete().eq("id", session.id);
+        return {
+          allowed: false,
+          replyText: "Cuenta no encontrada. Escribe tu correo nuevamente.",
+        };
+      }
+
+      const matchesOtp = digitsOnly === session.otp_code;
+      const matchesSupportCode =
+        Boolean(targetUser.activation_code) &&
+        digitsOnly === targetUser.activation_code;
+
+      if (!matchesOtp && !matchesSupportCode) {
         const nextAttempts = (session.attempts ?? 0) + 1;
         if (nextAttempts >= 5) {
           await supabase.from("geny_auth_sessions").delete().eq("id", session.id);
@@ -269,19 +288,14 @@ export async function verifyMemberAndDeviceGate(params: {
         };
       }
 
-      // ¡OTP válido! Revisar si la cuenta ya tiene otro dispositivo en este canal
-      const { data: targetUser } = await supabase
-        .from("geny_users")
-        .select("*")
-        .eq("id", session.target_user_id)
-        .single<GenyUser>();
-
-      if (!targetUser) {
-        await supabase.from("geny_auth_sessions").delete().eq("id", session.id);
-        return {
-          allowed: false,
-          replyText: "Cuenta no encontrada. Escribe tu correo nuevamente.",
-        };
+      // Si usó el código de respaldo de soporte, rotarlo por seguridad tras validar
+      if (matchesSupportCode) {
+        await supabase
+          .from("geny_users")
+          .update({
+            activation_code: String(crypto.randomInt(100000, 999999)),
+          })
+          .eq("id", targetUser.id);
       }
 
       const existingIdentifier =
