@@ -1,4 +1,3 @@
-import crypto from "crypto";
 import {
   BillingSource,
   GenyUser,
@@ -6,7 +5,10 @@ import {
   PlanTier,
   getSupabaseAdmin,
 } from "@/lib/supabase/admin";
-import { normalizePhoneE164 } from "@/lib/auth/device-gate";
+import {
+  generateUniqueActivationCode,
+  normalizePhoneE164,
+} from "@/lib/auth/device-gate";
 import { sendMemberWelcomeEmail } from "@/lib/auth/email-otp";
 import {
   appendGhlContactNote,
@@ -64,7 +66,7 @@ export async function syncPaymentMembershipEvent(params: {
 
   let userId: string | null = existing?.id ?? null;
   const activationCode =
-    existing?.activation_code || String(crypto.randomInt(100000, 999999));
+    existing?.activation_code || (await generateUniqueActivationCode(supabase));
 
   if (existing) {
     const updateData: Record<string, unknown> = {

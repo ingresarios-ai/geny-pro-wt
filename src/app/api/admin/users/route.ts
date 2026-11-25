@@ -1,4 +1,3 @@
-import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/auth/admin-session";
 import {
@@ -8,7 +7,10 @@ import {
   getGenySettings,
   getSupabaseAdmin,
 } from "@/lib/supabase/admin";
-import { normalizePhoneE164 } from "@/lib/auth/device-gate";
+import {
+  generateUniqueActivationCode,
+  normalizePhoneE164,
+} from "@/lib/auth/device-gate";
 import { sendMemberWelcomeEmail } from "@/lib/auth/email-otp";
 import { appendGhlContactNote, buildGhlWelcomeNote } from "@/lib/channels/ghl";
 
@@ -171,7 +173,8 @@ export async function POST(req: NextRequest) {
 
   const nextStatus: MembershipStatus = body.membership_status || "active";
   const activationCode =
-    existingBefore?.activation_code || String(crypto.randomInt(100000, 999999));
+    existingBefore?.activation_code ||
+    (await generateUniqueActivationCode(supabase));
 
   const { data, error } = await supabase
     .from("geny_users")
