@@ -742,8 +742,7 @@ export async function verifyMemberAndDeviceGate(params: {
     allowed: false,
     replyText:
       `¡Hola! Soy **GENY PRO**, tu mentora de trading y mentalidad en **INGRESARIOS** 💜.\n\n` +
-      `Para verificar tu membresía activa y vincular este dispositivo, por favor **escríbeme el correo electrónico** con el que realizaste tu inscripción (o ingresa tu código de activación de 6 dígitos si te lo compartió soporte).\n\n` +
-      `¿Aún no eres parte? Únete aquí: ${settings.payment_checkout_url}`,
+      `Para activar tu acceso, **escribe aquí abajo en este mismo chat de Telegram** el correo electrónico con el que te inscribiste (o escribe directamente tu código de 6 dígitos si te lo dio soporte) y presiona Enviar.`,
   };
 }
 
