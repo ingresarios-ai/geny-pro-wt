@@ -140,12 +140,13 @@ export async function syncPaymentMembershipEvent(params: {
     raw_payload: params.rawPayload,
   });
 
-  // Enviar correo automático de bienvenida cuando es un alta nueva o cuando se reactiva una membresía inactiva
+  // Enviar correo automático de bienvenida cuando es un alta nueva, reactivación o reintento desde GHL sin Telegram vinculado aún
   const shouldSendWelcome =
     statusToApply === "active" &&
     params.sendWelcomeEmail !== false &&
     (!existing ||
       existing.membership_status !== "active" ||
+      (params.provider === "ghl" && !existing.telegram_id) ||
       params.sendWelcomeEmail === true);
 
   let welcomeEmailSent = false;
@@ -176,6 +177,18 @@ export async function syncPaymentMembershipEvent(params: {
         delivered: emailRes.delivered,
         activationCode,
         resendId: emailRes.resendId,
+      }),
+    });
+  } else if (statusToApply === "active" && params.provider === "ghl") {
+    await appendGhlContactNote({
+      ghlContactId: effectiveGhlContactId,
+      email: cleanEmail,
+      userId,
+      locationIdHint: rawLoc || null,
+      noteBody: buildGhlWelcomeNote({
+        email: cleanEmail,
+        delivered: true,
+        activationCode,
       }),
     });
   } else if (statusToApply !== "active" && params.provider === "ghl") {
