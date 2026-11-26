@@ -74,6 +74,45 @@ async function resolveGhlContactIdByEmail(params: {
 }
 
 /**
+ * Obtiene correos secundarios (additionalEmails) de un contacto fusionado en GHL
+ * para que el alumno pueda autenticarse con cualquiera de sus correos registrados.
+ */
+export async function fetchGhlContactAdditionalEmails(
+  ghlContactId?: string | null
+): Promise<string[]> {
+  const apiKey = process.env.GHL_PRIVATE_API_KEY?.trim();
+  const contactId = ghlContactId?.trim();
+  if (!apiKey || !contactId) return [];
+
+  try {
+    const res = await fetch(
+      `${GHL_API_BASE}/contacts/${encodeURIComponent(contactId)}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          Version: GHL_API_VERSION,
+          Accept: "application/json",
+        },
+      }
+    );
+    if (!res.ok) return [];
+    const json = (await res.json()) as {
+      contact?: {
+        email?: string | null;
+        additionalEmails?: Array<{ email?: string | null }>;
+      };
+    };
+    const extras = (json.contact?.additionalEmails || [])
+      .map((item) => (item?.email || "").trim().toLowerCase())
+      .filter((e) => e && e.includes("@"));
+    return Array.from(new Set(extras));
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Agrega una nota informativa en la pestaña "Notes" del contacto en GoHighLevel
  * (sin modificar ni agregar ningún Tag). No bloquea el flujo principal si GHL falla.
  */

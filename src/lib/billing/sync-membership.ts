@@ -14,6 +14,7 @@ import {
   appendGhlContactNote,
   buildGhlDeactivationNote,
   buildGhlWelcomeNote,
+  fetchGhlContactAdditionalEmails,
 } from "@/lib/channels/ghl";
 
 export async function syncPaymentMembershipEvent(params: {
@@ -67,6 +68,15 @@ export async function syncPaymentMembershipEvent(params: {
   let userId: string | null = existing?.id ?? null;
   const activationCode =
     existing?.activation_code || (await generateUniqueActivationCode(supabase));
+  const candidateGhlContactId =
+    params.externalIds?.ghl_contact_id || existing?.ghl_contact_id || null;
+  const ghlAdditionalEmails =
+    params.provider === "ghl" && candidateGhlContactId
+      ? await fetchGhlContactAdditionalEmails(candidateGhlContactId)
+      : [];
+  const mergedAlternateEmails = Array.from(
+    new Set([...(existing?.alternate_emails || []), ...ghlAdditionalEmails])
+  ).filter((e) => e && e !== cleanEmail);
 
   if (existing) {
     const updateData: Record<string, unknown> = {
@@ -76,6 +86,9 @@ export async function syncPaymentMembershipEvent(params: {
     };
     if (!existing.activation_code) {
       updateData.activation_code = activationCode;
+    }
+    if (mergedAlternateEmails.length > 0) {
+      updateData.alternate_emails = mergedAlternateEmails;
     }
     if (params.fullName && (!existing.full_name || params.provider === "ghl")) {
       updateData.full_name = params.fullName;
@@ -113,6 +126,9 @@ export async function syncPaymentMembershipEvent(params: {
       membership_status: statusToApply,
       billing_source: params.provider,
       activation_code: activationCode,
+      ...(mergedAlternateEmails.length > 0
+        ? { alternate_emails: mergedAlternateEmails }
+        : {}),
       expires_at: params.expiresAt ?? null,
       ...(params.adminNotes ? { admin_notes: params.adminNotes } : {}),
       ...(normalizedPhone

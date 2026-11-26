@@ -45,8 +45,12 @@ function maskIdentifier(channel: "telegram" | "whatsapp", id: string): string {
   return channel === "whatsapp" ? `+••• ••• ${tail}` : `ID ••••${tail}`;
 }
 
+function sanitizeInvisibleChars(raw: string): string {
+  return raw.replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, "");
+}
+
 function extractEmailFromMessage(input: string): string | null {
-  const trimmed = input.trim();
+  const trimmed = sanitizeInvisibleChars(input).trim();
   if (!trimmed || trimmed.length > 220) return null;
   const match = trimmed.match(
     /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/
@@ -56,7 +60,7 @@ function extractEmailFromMessage(input: string): string | null {
 }
 
 function extractSixDigitCode(input: string): string | null {
-  const trimmed = input.trim();
+  const trimmed = sanitizeInvisibleChars(input).trim();
   if (!trimmed || trimmed.length > 100 || trimmed.includes("@")) return null;
   const compactDigits = trimmed.replace(/[\s-]+/g, "");
   if (/^\d{6}$/.test(compactDigits)) {
@@ -622,18 +626,44 @@ export async function verifyMemberAndDeviceGate(params: {
   // --- PASO C: ¿El usuario escribió un correo electrónico para verificarse? ---
   if (candidateEmail) {
     const emailNormalized = candidateEmail;
-    const { data: candidateUser } = await supabase
+    let { data: candidateUser } = await supabase
       .from("geny_users")
       .select("*")
       .eq("email", emailNormalized)
       .maybeSingle<GenyUser>();
 
     if (!candidateUser) {
+      const { data: altMatchedUsers } = await supabase
+        .from("geny_users")
+        .select("*")
+        .contains("alternate_emails", [emailNormalized])
+        .limit(1);
+      if (altMatchedUsers && altMatchedUsers.length === 1) {
+        candidateUser = altMatchedUsers[0] as GenyUser;
+      }
+    }
+
+    if (!candidateUser) {
+      await supabase.from("geny_auth_sessions").upsert(
+        {
+          channel,
+          sender_identifier: senderId,
+          step: "awaiting_email",
+          target_user_id: null,
+          candidate_email: emailNormalized,
+          otp_code: null,
+          attempts: 0,
+          expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "channel,sender_identifier" }
+      );
+
       return {
         allowed: false,
         replyText:
           `No encontré una membresía registrada con el correo **${emailNormalized}**.\n\n` +
-          `• Verifica que sea el mismo correo con el que realizaste tu compra.\n` +
+          `• Verifica que sea el mismo correo con el que realizaste tu compra (o ingresa directamente tu código de activación de 6 dígitos si te lo compartió soporte).\n` +
           `• Si aún no eres miembro activo de INGRESARIOS, inscríbete aquí: ${settings.payment_checkout_url}`,
       };
     }

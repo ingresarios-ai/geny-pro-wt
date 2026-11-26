@@ -83,6 +83,7 @@ export interface GenyUser {
   hotmart_subscriber_code: string | null;
   ghl_contact_id: string | null;
   activation_code: string | null;
+  alternate_emails?: string[];
   expires_at: string | null;
   suspended_reason: string | null;
   suspended_at: string | null;
