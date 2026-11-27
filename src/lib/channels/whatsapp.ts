@@ -45,9 +45,8 @@ export async function sendWhatsAppTextMessage(
   }
 
   for (const part of chunks) {
-    const res = await fetch(
-      `https://graph.facebook.com/${GRAPH_VERSION}/${phoneNumberId}/messages`,
-      {
+    const sendToNumber = async (recipientDigits: string) =>
+      fetch(`https://graph.facebook.com/${GRAPH_VERSION}/${phoneNumberId}/messages`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -56,12 +55,19 @@ export async function sendWhatsAppTextMessage(
         body: JSON.stringify({
           messaging_product: "whatsapp",
           recipient_type: "individual",
-          to: cleanRecipient,
+          to: recipientDigits,
           type: "text",
           text: { preview_url: false, body: part },
         }),
-      }
-    );
+      });
+
+    let res = await sendToNumber(cleanRecipient);
+
+    // Fallback automático para números de México (+521... -> +52...) si Meta rechaza el '1' móvil
+    if (!res.ok && /^521\d{10}$/.test(cleanRecipient)) {
+      const mxWithoutOne = `52${cleanRecipient.slice(3)}`;
+      res = await sendToNumber(mxWithoutOne);
+    }
 
     if (!res.ok) {
       const errText = await res.text();

@@ -21,6 +21,21 @@ export function normalizePhoneE164(raw: string): string {
   return digits ? `+${digits}` : raw.trim();
 }
 
+function getWhatsAppPhoneVariants(e164: string): string[] {
+  const variants = new Set<string>([e164]);
+  const mxWithOne = e164.match(/^\+521(\d{10})$/);
+  if (mxWithOne) variants.add(`+52${mxWithOne[1]}`);
+  const mxWithoutOne = e164.match(/^\+52(\d{10})$/);
+  if (mxWithoutOne) variants.add(`+521${mxWithoutOne[1]}`);
+
+  const arWithNine = e164.match(/^\+549(\d{10})$/);
+  if (arWithNine) variants.add(`+54${arWithNine[1]}`);
+  const arWithoutNine = e164.match(/^\+54(\d{10})$/);
+  if (arWithoutNine) variants.add(`+549${arWithoutNine[1]}`);
+
+  return Array.from(variants);
+}
+
 export async function generateUniqueActivationCode(
   supabase: SupabaseClient = getSupabaseAdmin()
 ): Promise<string> {
@@ -289,11 +304,14 @@ export async function verifyMemberAndDeviceGate(params: {
     channel === "whatsapp" ? "whatsapp_last_swap_at" : "telegram_last_swap_at";
 
   // 1. ¿El dispositivo actual YA está vinculado a un usuario?
-  const { data: boundUser } = await supabase
-    .from("geny_users")
-    .select("*")
-    .eq(columnId, senderId)
-    .maybeSingle<GenyUser>();
+  const boundQuery = supabase.from("geny_users").select("*");
+  const { data: boundUser } =
+    channel === "whatsapp"
+      ? await boundQuery
+          .in("whatsapp_phone", getWhatsAppPhoneVariants(senderId))
+          .limit(1)
+          .maybeSingle<GenyUser>()
+      : await boundQuery.eq(columnId, senderId).maybeSingle<GenyUser>();
 
   if (boundUser) {
     const statusCheck = checkActiveMembership(boundUser, settings);
